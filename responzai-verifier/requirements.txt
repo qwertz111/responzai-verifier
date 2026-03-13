@@ -1,0 +1,40 @@
+# Python-Abhängigkeiten für den responzai Verifier
+
+# Web-Framework
+fastapi==0.109.0
+uvicorn==0.27.0
+
+# KI und NLP
+anthropic==0.18.0
+langchain==0.1.0
+langgraph==0.0.26
+voyageai==0.2.0
+
+# Datenbank
+asyncpg==0.29.0
+sqlalchemy==2.0.25
+pgvector==0.2.4
+
+# Web-Crawling
+requests==2.31.0
+beautifulsoup4==4.12.3
+scrapy==2.11.0
+
+# RSS und Monitoring
+feedparser==6.0.11
+
+# Hilfsbibliotheken
+numpy==1.26.3
+python-dotenv==1.0.0
+pydantic==2.5.0
+
+# Dokument-Parsing
+PyMuPDF==1.23.8
+python-docx==1.1.0
+openpyxl==3.1.2
+python-pptx==0.6.23
+odfpy==1.4.1
+pytesseract==0.3.10
+Pillow==10.2.0
+extract-msg==0.48.0
+python-multipart==0.0.6

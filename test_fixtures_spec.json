@@ -1,0 +1,78 @@
+{
+  "_comment": "Zentrale Testdaten. Jeder Test importiert von hier. Kein Subagent erfindet eigene.",
+
+  "sample_text": "Der EU AI Act (Verordnung (EU) 2024/1689) verpflichtet Anbieter und Betreiber von KI-Systemen ab Februar 2025 zur Sicherstellung der KI-Kompetenz ihrer Mitarbeiter. Artikel 4 regelt die konkreten Anforderungen. responzai EVIDENCE unterstützt Unternehmen bei der Dokumentation des rechtskonformen KI-Einsatzes in HR-Prozessen.",
+
+  "sample_url": "https://responzai.eu/produkte",
+
+  "sample_claims": [
+    {
+      "id": "claim_001",
+      "claim_text": "Der EU AI Act verpflichtet Anbieter und Betreiber von KI-Systemen zur Sicherstellung der KI-Kompetenz.",
+      "category": "LEGAL_CLAIM",
+      "verifiability": "high",
+      "original_text": "Der EU AI Act (Verordnung (EU) 2024/1689) verpflichtet Anbieter und Betreiber von KI-Systemen ab Februar 2025 zur Sicherstellung der KI-Kompetenz ihrer Mitarbeiter.",
+      "source_url": "https://responzai.eu/produkte",
+      "implicit_assumptions": ["Gilt für alle Größen von Unternehmen"]
+    },
+    {
+      "id": "claim_002",
+      "claim_text": "Die Verpflichtung zur KI-Kompetenz gilt ab Februar 2025.",
+      "category": "LEGAL_CLAIM",
+      "verifiability": "high",
+      "original_text": "Der EU AI Act (Verordnung (EU) 2024/1689) verpflichtet Anbieter und Betreiber von KI-Systemen ab Februar 2025 zur Sicherstellung der KI-Kompetenz ihrer Mitarbeiter.",
+      "source_url": "https://responzai.eu/produkte",
+      "implicit_assumptions": []
+    },
+    {
+      "id": "claim_003",
+      "claim_text": "responzai EVIDENCE unterstützt Unternehmen bei der Dokumentation des rechtskonformen KI-Einsatzes in HR-Prozessen.",
+      "category": "PRODUCT_CLAIM",
+      "verifiability": "medium",
+      "original_text": "responzai EVIDENCE unterstützt Unternehmen bei der Dokumentation des rechtskonformen KI-Einsatzes in HR-Prozessen.",
+      "source_url": "https://responzai.eu/produkte",
+      "implicit_assumptions": ["EVIDENCE ist ein bestehendes Produkt"]
+    }
+  ],
+
+  "sample_vera_result": {
+    "claim_id": "claim_001",
+    "score": 0.92,
+    "status": "verified",
+    "reasoning": "Artikel 4 der Verordnung (EU) 2024/1689 bestätigt die Verpflichtung zur KI-Kompetenz für Anbieter und Betreiber.",
+    "supporting_passages": [
+      {
+        "chunk_id": 42,
+        "text": "Anbieter und Betreiber von KI-Systemen ergreifen Maßnahmen, um nach besten Kräften sicherzustellen, dass ihr Personal und andere Personen, die in ihrem Auftrag mit dem Betrieb und der Nutzung von KI-Systemen befasst sind, über ein ausreichendes Maß an KI-Kompetenz verfügen.",
+        "source": "EU AI Act, Art. 4",
+        "relevance": 0.95
+      }
+    ],
+    "gaps": []
+  },
+
+  "sample_conrad_result": {
+    "claim_id": "claim_001",
+    "result": "weakened",
+    "strategies_applied": [
+      {
+        "strategy": "AUSNAHMENSUCHE",
+        "finding": "Die Verpflichtung gilt nur für Anbieter und Betreiber, nicht für alle Unternehmen generell.",
+        "evidence": "Art. 4 VO (EU) 2024/1689: 'Anbieter und Betreiber von KI-Systemen'",
+        "severity": "minor"
+      }
+    ],
+    "overall_assessment": "Die Behauptung ist im Kern korrekt, sollte aber präziser formuliert werden.",
+    "suggested_refinement": "Präzisieren: 'Anbieter und Betreiber von KI-Systemen' statt 'Unternehmen'."
+  },
+
+  "sample_chunk": {
+    "content": "Anbieter und Betreiber von KI-Systemen ergreifen Maßnahmen, um nach besten Kräften sicherzustellen, dass ihr Personal über ein ausreichendes Maß an KI-Kompetenz verfügen.",
+    "metadata": {
+      "source": "Verordnung (EU) 2024/1689",
+      "article": "Art. 4",
+      "title": "KI-Kompetenz",
+      "eur_lex_id": "32024R1689"
+    }
+  }
+}

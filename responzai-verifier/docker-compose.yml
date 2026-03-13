@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  # ─────────────────────────────────────────
+  # PostgreSQL mit pgvector
+  # Die Datenbank für Claims und Embeddings
+  # ─────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: responzai-db
+    restart: always
+    environment:
+      POSTGRES_USER: responzai
+      POSTGRES_PASSWORD: HIER_SICHERES_PASSWORT_EINSETZEN
+      POSTGRES_DB: verifier
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U responzai -d verifier"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────
+  # n8n Automatisierung
+  # Steuert die automatischen Prüfläufe
+  # ─────────────────────────────────────────
+  n8n:
+    image: n8nio/n8n
+    container_name: responzai-n8n
+    restart: always
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=HIER_SICHERES_PASSWORT_EINSETZEN
+      - N8N_HOST=n8n.DEINE-DOMAIN.de
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://n8n.DEINE-DOMAIN.de/
+    volumes:
+      - n8ndata:/home/node/.n8n
+    ports:
+      - "5678:5678"
+
+  # ─────────────────────────────────────────
+  # responzai Verifier API
+  # Die Pipeline mit allen 8 Agenten
+  # ─────────────────────────────────────────
+  verifier:
+    build: .
+    container_name: responzai-verifier
+    restart: always
+    environment:
+      - ANTHROPIC_API_KEY=HIER_DEINEN_API_KEY_EINSETZEN
+      - DATABASE_URL=postgresql://responzai:HIER_SICHERES_PASSWORT_EINSETZEN@postgres:5432/verifier
+      - VOYAGE_API_KEY=HIER_DEINEN_VOYAGE_KEY_EINSETZEN
+    volumes:
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  n8ndata:
