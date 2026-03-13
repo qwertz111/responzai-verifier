@@ -5,10 +5,11 @@ fastapi==0.109.0
 uvicorn==0.27.0
 
 # KI und NLP
-anthropic==0.18.0
-langchain==0.1.0
+anthropic==0.28.0
+langchain==0.1.14
 langgraph==0.0.26
-voyageai==0.2.0
+langchain-core==0.1.46
+voyageai==0.3.7
 
 # Datenbank
 asyncpg==0.29.0
