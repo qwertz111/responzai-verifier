@@ -57,6 +57,18 @@ PREDEFINED_SOURCES = {
         "type": "secondary",
         "description": "Richtlinie (EU) 2024/2853 ueber Produkthaftung",
     },
+    "agg": {
+        "title": "AGG",
+        "url": "https://www.gesetze-im-internet.de/agg/BJNR189710006.html",
+        "type": "secondary",
+        "description": "Allgemeines Gleichbehandlungsgesetz - Diskriminierungsschutz bei KI-Entscheidungen",
+    },
+    "betrvg": {
+        "title": "Betriebsverfassungsgesetz",
+        "url": "https://www.gesetze-im-internet.de/betrvg/BJNR000130972.html",
+        "type": "secondary",
+        "description": "BetrVG - Mitbestimmung bei KI-Einsatz im Betrieb",
+    },
 }
 
 
@@ -238,11 +250,13 @@ async def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Vordefinierte Quellen:
-  eu-ai-act     EU AI Act (Verordnung 2024/1689)
-  dsgvo         Datenschutz-Grundverordnung (2016/679)
-  ki-haftung    KI-Haftungsrichtlinie (Vorschlag)
+  eu-ai-act       EU AI Act (Verordnung 2024/1689)
+  dsgvo           Datenschutz-Grundverordnung (2016/679)
+  ki-haftung      KI-Haftungsrichtlinie (Vorschlag)
   produkthaftung  Produkthaftungsrichtlinie (2024/2853)
-  all           Alle vordefinierten Quellen laden
+  agg             Allgemeines Gleichbehandlungsgesetz
+  betrvg          Betriebsverfassungsgesetz
+  all             Alle vordefinierten Quellen laden
         """
     )
 
