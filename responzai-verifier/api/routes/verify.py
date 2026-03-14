@@ -144,6 +144,60 @@ async def verify_draft(request: Request, body: DraftRequest, _: str = Depends(re
         raise HTTPException(status_code=500, detail=f"Pipeline error: {str(e)}")
 
 
+@router.post("/verify/mock")
+async def verify_mock(request: Request, body: VerifyRequest):
+    """
+    Mock-Endpunkt fuer Dashboard-Tests. Gibt realistische Fake-Daten zurueck,
+    ohne die Claude API aufzurufen. Kein API-Key erforderlich.
+    """
+    return {
+        "status": "completed",
+        "source": body.source or body.url or "mock",
+        "total_claims": 6,
+        "verified_claims": 4,
+        "issues_found": 2,
+        "score": 0.82,
+        "verdict": "partially_verified",
+        "verification_report": {
+            "overall_score": 0.82,
+            "total_claims": 6,
+            "verified_count": 4,
+            "unverified_count": 1,
+            "survived_count": 3,
+            "weakened_count": 1,
+            "refuted_count": 1,
+            "claims_by_category": {
+                "LEGAL_CLAIM": 4,
+                "MARKET_CLAIM": 1,
+                "PRODUCT_CLAIM": 1,
+            },
+            "consistency_score": 0.88,
+            "freshness_summary": {
+                "fresh": 5,
+                "stale": 1,
+                "outdated": 0,
+            },
+        },
+        "improvement_report": {
+            "legal_updates": [
+                {"claim_id": "claim_006", "update": "EU-KI-Haftungsrichtlinie 2024 widerlegt diese Aussage ausdruecklich."},
+            ],
+            "text_improvements": [
+                {"original": "KI-Systeme, die als hochriskant eingestuft sind, muessen einer Pruefung unterzogen werden.", "suggestion": "Hochriskante KI-Systeme muessen eine Konformitaetsbewertung durchlaufen."},
+            ],
+            "ux_issues": [
+                {"issue": "Kein klarer Call-to-Action fuer KMU-Zielgruppe sichtbar.", "severity": "problematisch"},
+                {"issue": "Durchschnittliche Satzlaenge ueberschreitet 20 Woerter.", "severity": "verbesserungswuerdig"},
+            ],
+            "priority_actions": [
+                {"source": "Conrad (CONTRA)", "action": "claim_006 entfernen oder korrigieren: KI-Haftung ist rechtlich verankert.", "severity": "critical"},
+                {"source": "Vera (VERIFY)", "action": "Marktanteil-Angabe (80 %) auf belegbare Quelle anpassen (Eurostat: 25 %).", "severity": "major"},
+                {"source": "David (DRAFT)", "action": "Schachtelkonstruktion in Satz 3 aufloesen.", "severity": "minor"},
+            ],
+        },
+    }
+
+
 @router.get("/verify/{task_id}")
 async def get_verify_result(task_id: str):
     """

@@ -69,3 +69,44 @@ async def improve_content(request: Request, body: ImproveRequest, _: str = Depen
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Improvement pipeline error: {str(e)}")
+
+
+@router.post("/improve/mock")
+async def improve_mock(request: Request, body: ImproveRequest):
+    """
+    Mock-Endpunkt fuer Dashboard-Tests. Gibt realistische Fake-Daten zurueck,
+    ohne die Claude API aufzurufen. Kein API-Key erforderlich.
+    """
+    return {
+        "status": "completed",
+        "source": body.source or "mock",
+        "improvement_report": {
+            "text_improvements": [
+                {"original": "KI-Systeme, die in der EU eingesetzt werden, muessen einer Konformitaetsbewertung unterzogen werden.", "suggestion": "Hochriskante KI-Systeme in der EU benoetigen eine Konformitaetsbewertung."},
+                {"original": "Das Compliance-Framework muss implementiert werden.", "suggestion": "Der Rechtsrahmen muss umgesetzt werden."},
+            ],
+            "ux_issues": [
+                {"issue": "Kein klarer Einstieg fuer die Zielgruppe (KMU ohne KI-Vorwissen).", "severity": "problematisch"},
+                {"issue": "Durchschnittliche Satzlaenge: 28 Woerter (Empfehlung: max. 20).", "severity": "verbesserungswuerdig"},
+            ],
+            "priority_actions": [
+                {"source": "David (DRAFT)", "action": "Schachtelkonstruktionen aufloesen fuer bessere Lesbarkeit.", "severity": "major"},
+                {"source": "Uma (UX)", "action": "Einstieg fuer KMU-Zielgruppe optimieren – mit konkreter Handlungsempfehlung beginnen.", "severity": "major"},
+                {"source": "David (DRAFT)", "action": "Anglizismen durch deutsche Fachbegriffe ersetzen.", "severity": "minor"},
+                {"source": "Uma (UX)", "action": "Durchschnittliche Satzlaenge auf max. 20 Woerter reduzieren.", "severity": "minor"},
+            ],
+        },
+        "summary": {
+            "total_issues": 4,
+            "style_issues": 2,
+            "ux_issues": 2,
+            "overall_quality": "gut",
+            "recommended_action": "kleinere Verbesserungen empfohlen",
+        },
+        "priority_actions": [
+            {"source": "David (DRAFT)", "action": "Schachtelkonstruktionen aufloesen fuer bessere Lesbarkeit.", "severity": "major"},
+            {"source": "Uma (UX)", "action": "Einstieg fuer KMU-Zielgruppe optimieren – mit konkreter Handlungsempfehlung beginnen.", "severity": "major"},
+            {"source": "David (DRAFT)", "action": "Anglizismen durch deutsche Fachbegriffe ersetzen.", "severity": "minor"},
+            {"source": "Uma (UX)", "action": "Durchschnittliche Satzlaenge auf max. 20 Woerter reduzieren.", "severity": "minor"},
+        ],
+    }
