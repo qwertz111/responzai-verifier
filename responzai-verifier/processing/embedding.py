@@ -1,10 +1,14 @@
 # processing/embedding.py
 
+import os
 import voyageai
 from typing import List
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Voyage-3 Client initialisieren
-client = voyageai.Client(api_key="DEIN_VOYAGE_API_KEY")
+client = voyageai.Client(api_key=os.environ["VOYAGE_API_KEY"])
 
 def create_embeddings(texts: List[str]) -> List[List[float]]:
     """
