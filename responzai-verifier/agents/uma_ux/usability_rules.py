@@ -2,6 +2,7 @@
 
 import json
 import anthropic
+from json_repair import repair_json
 from agents.uma_ux.prompt import UMA_SYSTEM_PROMPT
 
 client = anthropic.Anthropic()
@@ -38,7 +39,7 @@ async def review_usability(text: str, sections: list, structure_info: dict) -> d
 
     response = client.messages.create(
         model="claude-sonnet-4-5",
-        max_tokens=4096,
+        max_tokens=8192,
         temperature=0,
         system=UMA_SYSTEM_PROMPT,
         messages=[
@@ -54,6 +55,10 @@ async def review_usability(text: str, sections: list, structure_info: dict) -> d
         if raw.startswith("json"):
             raw = raw[4:]
 
-    output = json.loads(raw)
+    try:
+        output = json.loads(repair_json(raw))
+    except Exception as e:
+        print(f"Uma: JSON-Parsing fehlgeschlagen ({e}). Gebe leeres Ergebnis zurück.")
+        output = {"ux_issues": [], "ux_score": 0.0}
 
     return output

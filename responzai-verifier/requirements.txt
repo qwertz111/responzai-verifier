@@ -31,6 +31,9 @@ httpx==0.27.0
 # API Security
 slowapi==0.1.9
 
+# JSON-Reparatur (Claude gibt gelegentlich malformed JSON zurück)
+json-repair>=0.30.0
+
 # Hilfsbibliotheken
 numpy>=1.26.3
 python-dotenv==1.0.0

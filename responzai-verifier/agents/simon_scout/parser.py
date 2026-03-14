@@ -3,6 +3,7 @@
 import anthropic
 from .prompt import SIMON_SYSTEM_PROMPT
 import json
+from json_repair import repair_json
 
 client = anthropic.Anthropic()
 
@@ -17,7 +18,7 @@ async def extract_claims(text: str, source_url: str) -> dict:
     """
     message = client.messages.create(
         model="claude-sonnet-4-20250514",
-        max_tokens=4096,
+        max_tokens=8192,
         temperature=0,
         system=SIMON_SYSTEM_PROMPT,
         messages=[
@@ -48,8 +49,9 @@ async def extract_claims(text: str, source_url: str) -> dict:
         return {"claims": []}
 
     try:
-        claims_data = json.loads(response_text[json_start:json_end])
-    except json.JSONDecodeError as e:
+        raw = response_text[json_start:json_end]
+        claims_data = json.loads(repair_json(raw))
+    except Exception as e:
         print(f"Simon: JSON-Parsing fehlgeschlagen ({e}). Gebe leere Claims zurück.")
         return {"claims": []}
 

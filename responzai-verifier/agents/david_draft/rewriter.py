@@ -2,6 +2,7 @@
 
 import json
 import anthropic
+from json_repair import repair_json
 from agents.david_draft.prompt import DAVID_SYSTEM_PROMPT
 
 client = anthropic.Anthropic()
@@ -33,7 +34,7 @@ async def rewrite_text(text: str, style_issues: list) -> dict:
 
     response = client.messages.create(
         model="claude-sonnet-4-5",
-        max_tokens=4096,
+        max_tokens=8192,
         temperature=0,
         system=DAVID_SYSTEM_PROMPT,
         messages=[
@@ -49,6 +50,10 @@ async def rewrite_text(text: str, style_issues: list) -> dict:
         if raw.startswith("json"):
             raw = raw[4:]
 
-    output = json.loads(raw)
+    try:
+        output = json.loads(repair_json(raw))
+    except Exception as e:
+        print(f"David: JSON-Parsing fehlgeschlagen ({e}). Gebe leeres Ergebnis zurück.")
+        output = {"text_improvements": [], "style_score": 0.0}
 
     return output
