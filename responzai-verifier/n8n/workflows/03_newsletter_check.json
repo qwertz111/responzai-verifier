@@ -1,0 +1,122 @@
+{
+  "name": "Newsletter-Prüfung",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "newsletter-published",
+        "httpMethod": "POST",
+        "responseMode": "responseNode"
+      },
+      "name": "Neuer Newsletter",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "newsletter-published"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://verifier:8000/knowledge/ingest",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": \"{{ $json.body.newsletter_text }}\",\n  \"source_type\": \"own\",\n  \"source_name\": \"Newsletter {{ $json.body.edition }}\"\n}"
+      },
+      "name": "In Wissensbasis aufnehmen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://verifier:8000/verify",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"{{ $json.body.newsletter_text }}\",\n  \"mode\": \"full\"\n}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "name": "Newsletter prüfen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "verifier@responzai.eu",
+        "toEmail": "={{$env.ALERT_EMAIL}}",
+        "subject": "Newsletter-Prüfung: {{ $json.total_claims }} Claims, {{ $json.issues_found }} Probleme",
+        "text": "Der neue Newsletter wurde geprüft.\n\nErgebnis:\n- Claims: {{ $json.total_claims }}\n- Verifiziert: {{ $json.verified_claims }}\n- Probleme: {{ $json.issues_found }}\n\nDetails im Dashboard."
+      },
+      "name": "Prüfergebnis senden",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [910, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"checked\",\n  \"total_claims\": {{ $json.total_claims }},\n  \"issues_found\": {{ $json.issues_found }}\n}"
+      },
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1130, 300]
+    }
+  ],
+  "connections": {
+    "Neuer Newsletter": {
+      "main": [
+        [
+          {
+            "node": "In Wissensbasis aufnehmen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "In Wissensbasis aufnehmen": {
+      "main": [
+        [
+          {
+            "node": "Newsletter prüfen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Newsletter prüfen": {
+      "main": [
+        [
+          {
+            "node": "Prüfergebnis senden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prüfergebnis senden": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "responzai"
+    }
+  ]
+}

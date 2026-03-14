@@ -1,0 +1,136 @@
+{
+  "name": "Wöchentlicher Prüflauf",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * 1"
+            }
+          ]
+        }
+      },
+      "name": "Wöchentlicher Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://verifier:8000/verify",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"url\": \"https://responzai.eu\",\n  \"mode\": \"full\"\n}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "name": "Verifier API aufrufen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": ""
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.issues_found }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "Probleme gefunden?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "verifier@responzai.eu",
+        "toEmail": "={{$env.ALERT_EMAIL}}",
+        "subject": "⚠ responzai: {{ $json.issues_found }} Probleme gefunden",
+        "text": "ACHTUNG: Der wöchentliche Prüflauf hat {{ $json.issues_found }} Probleme gefunden.\n\nGeprüfte Claims: {{ $json.total_claims }}\nVerifiziert: {{ $json.verified_claims }}\nProbleme: {{ $json.issues_found }}\n\nBitte prüfe die Ergebnisse im Dashboard."
+      },
+      "name": "Alarm bei Problemen",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [910, 200]
+    },
+    {
+      "parameters": {
+        "fromEmail": "verifier@responzai.eu",
+        "toEmail": "={{$env.ALERT_EMAIL}}",
+        "subject": "responzai Prüfbericht KW {{ $now.format('WW') }}",
+        "text": "Wöchentlicher Prüfbericht für responzai.eu\n\nGeprüfte Claims: {{ $json.total_claims }}\nVerifiziert: {{ $json.verified_claims }}\nProbleme: {{ $json.issues_found }}\n\nAlles in Ordnung."
+      },
+      "name": "Report per E-Mail",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [910, 400]
+    }
+  ],
+  "connections": {
+    "Wöchentlicher Trigger": {
+      "main": [
+        [
+          {
+            "node": "Verifier API aufrufen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verifier API aufrufen": {
+      "main": [
+        [
+          {
+            "node": "Probleme gefunden?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Probleme gefunden?": {
+      "main": [
+        [
+          {
+            "node": "Alarm bei Problemen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report per E-Mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "responzai"
+    }
+  ]
+}

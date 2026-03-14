@@ -1,0 +1,135 @@
+{
+  "name": "EUR-Lex Monitoring (Pia)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Täglicher Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://eur-lex.europa.eu/rss/search-result.xml?qid=AI_ACT_FEED_ID"
+      },
+      "name": "EUR-Lex Feed",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": ""
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.isoDate }}",
+              "rightValue": "={{ $now.minus({days: 1}).toISO() }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "after"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "Neue Einträge?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://verifier:8000/knowledge/update",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"source_url\": \"{{ $json.link }}\",\n  \"source_type\": \"primary\"\n}"
+      },
+      "name": "Wissensbasis aktualisieren",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [910, 200]
+    },
+    {
+      "parameters": {
+        "fromEmail": "pia@responzai.eu",
+        "toEmail": "={{$env.ALERT_EMAIL}}",
+        "subject": "Pia: Neue EUR-Lex Veröffentlichung",
+        "text": "Pia hat eine neue Veröffentlichung gefunden:\n\n{{ $json.title }}\n{{ $json.link }}\n\nDie Wissensbasis wird automatisch aktualisiert. Ein neuer Prüflauf wird empfohlen."
+      },
+      "name": "Update-Benachrichtigung",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1130, 200]
+    }
+  ],
+  "connections": {
+    "Täglicher Check": {
+      "main": [
+        [
+          {
+            "node": "EUR-Lex Feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EUR-Lex Feed": {
+      "main": [
+        [
+          {
+            "node": "Neue Einträge?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Neue Einträge?": {
+      "main": [
+        [
+          {
+            "node": "Wissensbasis aktualisieren",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Wissensbasis aktualisieren": {
+      "main": [
+        [
+          {
+            "node": "Update-Benachrichtigung",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "responzai"
+    }
+  ]
+}
