@@ -1,0 +1,151 @@
+{
+  "name": "Pre-Publication Check (CMS-Webhook)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "pre-publish",
+        "httpMethod": "POST",
+        "responseMode": "responseNode"
+      },
+      "name": "CMS Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "pre-publish"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://verifier:8000/verify/draft",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"{{ $json.body.text }}\",\n  \"url\": \"{{ $json.body.url }}\"\n}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "name": "Draft prüfen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": ""
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.verdict }}",
+              "rightValue": "rejected",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "Abgelehnt?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "verifier@responzai.eu",
+        "toEmail": "={{$env.ALERT_EMAIL}}",
+        "subject": "⚠ Veröffentlichung blockiert: {{ $json.issues_found }} Probleme",
+        "text": "Ein Text wurde zur Veröffentlichung eingereicht, aber vom Verifier abgelehnt.\n\nProbleme: {{ $json.issues_found }}\nScore: {{ $json.score }}\n\nBitte prüfe und korrigiere den Text vor der Veröffentlichung."
+      },
+      "name": "Ablehnung melden",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [910, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"approved\": false,\n  \"verdict\": \"{{ $json.verdict }}\",\n  \"score\": {{ $json.score }},\n  \"issues_found\": {{ $json.issues_found }},\n  \"message\": \"Text wurde abgelehnt. Bitte Probleme korrigieren.\"\n}"
+      },
+      "name": "Response Abgelehnt",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1130, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"approved\": true,\n  \"verdict\": \"{{ $json.verdict }}\",\n  \"score\": {{ $json.score }},\n  \"issues_found\": {{ $json.issues_found }},\n  \"message\": \"Text freigegeben.\"\n}"
+      },
+      "name": "Response Freigegeben",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [910, 400]
+    }
+  ],
+  "connections": {
+    "CMS Webhook": {
+      "main": [
+        [
+          {
+            "node": "Draft prüfen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft prüfen": {
+      "main": [
+        [
+          {
+            "node": "Abgelehnt?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Abgelehnt?": {
+      "main": [
+        [
+          {
+            "node": "Ablehnung melden",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response Freigegeben",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ablehnung melden": {
+      "main": [
+        [
+          {
+            "node": "Response Abgelehnt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "responzai"
+    }
+  ]
+}
