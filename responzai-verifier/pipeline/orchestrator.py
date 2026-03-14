@@ -347,3 +347,25 @@ def build_pipeline():
     workflow.add_edge("reports", END)
 
     return workflow.compile()
+
+
+def build_improvement_pipeline():
+    """
+    Baut die verkürzte Verbesserungs-Pipeline (ohne Prüfphase).
+
+    Nur David und Uma werden ausgeführt – kein Simon/Vera/Conrad/Sven/Pia/Lena.
+    Geeignet für Texte, die bereits geprüft wurden oder nur stilistisch
+    und strukturell verbessert werden sollen.
+    """
+    workflow = StateGraph(PipelineState)
+
+    workflow.add_node("david", david_step)
+    workflow.add_node("uma", uma_step)
+    workflow.add_node("reports", generate_reports)
+
+    workflow.set_entry_point("david")
+    workflow.add_edge("david", "uma")
+    workflow.add_edge("uma", "reports")
+    workflow.add_edge("reports", END)
+
+    return workflow.compile()
