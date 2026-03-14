@@ -42,7 +42,7 @@ def verify_source_binding(lena_output: dict, provided_sources: list) -> dict:
     if lena_output.get("coverage", 0) < 0.95:
         return {
             "status": "REVIEW",
-            "reason": f"Quellenabdeckung nur {lena_output['coverage']*100:.0f}%",
+            "reason": f"Quellenabdeckung nur {lena_output.get('coverage', 0)*100:.0f}%",
             "action": "Lenas Vorschlag braucht menschliche Prüfung."
         }
 
