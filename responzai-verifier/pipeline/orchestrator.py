@@ -116,21 +116,43 @@ async def conrad_step(state: PipelineState) -> PipelineState:
 
 
 async def sven_step(state: PipelineState) -> PipelineState:
-    """Sven prüft die Konsistenz aller Claims."""
+    """Sven prüft die Konsistenz aller Claims auf Widersprüche."""
     from agents.sven_sync.consistency import find_similar_claims
+    from agents.sven_sync.contradiction_map import check_contradictions
 
-    # Alle Claims, die noch im Rennen sind
     all_active = state["survived_claims"] + state["weakened_claims"]
 
-    similar_pairs = await find_similar_claims(all_active)
+    if len(all_active) < 2:
+        # Weniger als 2 Claims: kein Widerspruch möglich
+        state["contradictions"] = []
+        state["consistency_score"] = 1.0
+        print("Sven: Zu wenig Claims fuer Konsistenzpruefung.")
+        return state
 
-    # TODO: Für jedes ähnliche Paar prüfen, ob sie sich widersprechen
-    # (Hier kommt Svens Claude-Aufruf)
+    try:
+        # 1. Ähnliche Claim-Paare finden (Vektorvergleich)
+        similar_pairs = await find_similar_claims(all_active)
 
-    state["contradictions"] = []  # Wird befüllt
-    state["consistency_score"] = 1.0  # Default: keine Widersprueche gefunden
+        if not similar_pairs:
+            state["contradictions"] = []
+            state["consistency_score"] = 1.0
+            print("Sven: Keine aehnlichen Paare gefunden, keine Widersprueche.")
+            return state
 
-    print(f"Sven: {len(similar_pairs)} ähnliche Paare gefunden.")
+        # 2. Widersprueche pruefen (Claude Sonnet pro Paar)
+        result = await check_contradictions(similar_pairs)
+        state["contradictions"] = result["contradictions"]
+        state["consistency_score"] = result["consistency_score"]
+
+        print(f"Sven: {len(similar_pairs)} aehnliche Paare, "
+              f"{len(result['contradictions'])} Widersprueche, "
+              f"Score={result['consistency_score']}.")
+
+    except Exception as e:
+        state["contradictions"] = []
+        state["consistency_score"] = 1.0
+        print(f"Sven: Fehler - {e}. Konsistenz-Score auf 1.0 gesetzt.")
+
     return state
 
 
