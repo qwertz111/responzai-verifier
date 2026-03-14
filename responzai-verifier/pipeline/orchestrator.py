@@ -167,8 +167,16 @@ async def lena_step(state: PipelineState) -> PipelineState:
                     if c.get("freshness") in ["stale", "outdated"]]
 
     for claim in problematic:
-        # Lena generiert Vorschlag + Rückprüfung
-        result = await run_verification_loop(claim.get("lena_output", {}), claim)
+        lena_output = claim.get("lena_output", {})
+        # Ohne generierten Textvorschlag kann Lena nicht pruefen
+        if not lena_output.get("suggested_text"):
+            legal_updates.append({
+                "status": "REVIEW",
+                "reason": "Kein Textvorschlag generiert, manuelle Pruefung noetig.",
+                "claim": claim.get("claim_text", ""),
+            })
+            continue
+        result = await run_verification_loop(lena_output, claim)
         legal_updates.append(result)
 
     state["legal_updates"] = legal_updates
