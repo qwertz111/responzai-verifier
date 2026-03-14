@@ -156,7 +156,9 @@ async def pia_step(state: PipelineState) -> PipelineState:
 
 
 async def lena_step(state: PipelineState) -> PipelineState:
-    """Lena generiert rechtliche Aktualisierungen."""
+    """Lena generiert rechtliche Aktualisierungen mit Rueckpruefung."""
+    from agents.lena_legal.source_mapper import map_sources_to_claim
+    from agents.lena_legal.text_generator import generate_legal_update
     from agents.lena_legal.verification_loop import run_verification_loop
 
     legal_updates = []
@@ -167,17 +169,44 @@ async def lena_step(state: PipelineState) -> PipelineState:
                     if c.get("freshness") in ["stale", "outdated"]]
 
     for claim in problematic:
-        lena_output = claim.get("lena_output", {})
-        # Ohne generierten Textvorschlag kann Lena nicht pruefen
-        if not lena_output.get("suggested_text"):
-            legal_updates.append({
-                "status": "REVIEW",
-                "reason": "Kein Textvorschlag generiert, manuelle Pruefung noetig.",
-                "claim": claim.get("claim_text", ""),
-            })
+        claim_text = claim.get("claim_text", "")
+        if not claim_text:
             continue
-        result = await run_verification_loop(lena_output, claim)
-        legal_updates.append(result)
+
+        try:
+            # 1. Relevante Quellen finden und mit Hashes versehen
+            sources = await map_sources_to_claim(claim)
+            if not sources:
+                legal_updates.append({
+                    "status": "REVIEW",
+                    "reason": "Keine relevanten Quellen gefunden.",
+                    "claim": claim_text,
+                })
+                continue
+
+            # 2. Lena generiert Textvorschlag (Claude Opus, temperature=0)
+            lena_output = await generate_legal_update(claim, sources)
+            claim["lena_output"] = lena_output
+            claim["source_passages"] = sources
+
+            # 3. Rueckpruefung: Quellen-Binding + Vera + Conrad
+            if not lena_output.get("suggested_text"):
+                legal_updates.append({
+                    "status": "REVIEW",
+                    "reason": "Lena konnte keinen Textvorschlag generieren.",
+                    "claim": claim_text,
+                })
+                continue
+
+            result = await run_verification_loop(lena_output, claim)
+            legal_updates.append(result)
+
+        except Exception as e:
+            legal_updates.append({
+                "status": "ERROR",
+                "reason": f"Fehler bei Lena: {str(e)}",
+                "claim": claim_text,
+            })
 
     state["legal_updates"] = legal_updates
 
