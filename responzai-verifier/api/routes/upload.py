@@ -1,16 +1,18 @@
 # api/routes/upload.py
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from document_ingestion.router import ingest_document
 from document_ingestion.storage import save_upload
 from pipeline.orchestrator import build_pipeline
+from api.security import require_api_key
 
 router = APIRouter()
 
 @router.post("/verify/document")
 async def verify_document(
     file: UploadFile = File(...),
-    mode: str = "full"
+    mode: str = "full",
+    _: str = Depends(require_api_key)
 ):
     """
     Nimmt eine Datei entgegen, extrahiert den Text und
