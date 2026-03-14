@@ -1,9 +1,17 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from api.security import limiter
+
+ALLOWED_ORIGINS = [
+    "https://responzai.eu",
+    "https://www.responzai.eu",
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
 
 app = FastAPI(
     title="responzai Verifier API",
@@ -18,15 +26,26 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # CORS: nur responzai.eu und localhost fuer lokale Entwicklung
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://responzai.eu",
-        "https://www.responzai.eu",
-        "http://localhost:5173",
-        "http://localhost:3000",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+
+# Unbehandelte Exceptions mit CORS-Headern zurückgeben,
+# damit der Browser nicht "No CORS header" meldet statt des echten Fehlers.
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    origin = request.headers.get("origin", "")
+    headers = {}
+    if origin in ALLOWED_ORIGINS:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal server error: {str(exc)}"},
+        headers=headers,
+    )
 
 # Routes einbinden
 from api.routes.verify import router as verify_router

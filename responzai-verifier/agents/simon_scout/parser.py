@@ -42,6 +42,15 @@ async def extract_claims(text: str, source_url: str) -> dict:
     # (Claude gibt manchmal Text vor/nach dem JSON zurück)
     json_start = response_text.find("{")
     json_end = response_text.rfind("}") + 1
-    claims_data = json.loads(response_text[json_start:json_end])
+
+    if json_start == -1 or json_end == 0:
+        print(f"Simon: Kein JSON in Antwort gefunden. Gebe leere Claims zurück.")
+        return {"claims": []}
+
+    try:
+        claims_data = json.loads(response_text[json_start:json_end])
+    except json.JSONDecodeError as e:
+        print(f"Simon: JSON-Parsing fehlgeschlagen ({e}). Gebe leere Claims zurück.")
+        return {"claims": []}
 
     return claims_data
