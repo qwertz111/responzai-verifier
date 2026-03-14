@@ -36,8 +36,18 @@ def create_verification_report(state: dict) -> dict:
     weakened_count = len(weakened_claims)
     survived_count = len(survived_claims)
 
-    # Verifizierungsrate (Vera)
-    verification_rate = verified_count / total_claims if total_claims > 0 else 0.0
+    # Verifizierungsrate (Vera) - nur auf prüfbare Kategorien beziehen.
+    # PRODUCT_CLAIM und TARGET_GROUP_CLAIM sind Marketing-Aussagen,
+    # die nicht gegen die Rechtswissensbasis verifizierbar sind.
+    # Sie fließen daher nicht in die Verifizierungsrate ein.
+    VERIFIABLE_CATEGORIES = {"LEGAL_CLAIM", "MARKET_CLAIM"}
+    verifiable_claims = [c for c in claims if c.get("category") in VERIFIABLE_CATEGORIES]
+    verifiable_count = len(verifiable_claims)
+
+    verified_verifiable = [
+        c for c in verified_claims if c.get("category") in VERIFIABLE_CATEGORIES
+    ]
+    verification_rate = len(verified_verifiable) / verifiable_count if verifiable_count > 0 else 1.0
 
     # Überlebensrate nach Conrad (bezogen auf verifizierte Claims)
     if verified_count > 0:
