@@ -60,7 +60,7 @@
     },
     {
       "parameters": {
-        "fromEmail": "verifier@responzai.eu",
+        "fromEmail": "responzai-verifier@xoppy.de",
         "toEmail": "={{$env.ALERT_EMAIL}}",
         "subject": "⚠ responzai: {{ $json.issues_found }} Probleme gefunden",
         "text": "ACHTUNG: Der wöchentliche Prüflauf hat {{ $json.issues_found }} Probleme gefunden.\n\nGeprüfte Claims: {{ $json.total_claims }}\nVerifiziert: {{ $json.verified_claims }}\nProbleme: {{ $json.issues_found }}\n\nBitte prüfe die Ergebnisse im Dashboard."
@@ -72,7 +72,7 @@
     },
     {
       "parameters": {
-        "fromEmail": "verifier@responzai.eu",
+        "fromEmail": "responzai-verifier@xoppy.de",
         "toEmail": "={{$env.ALERT_EMAIL}}",
         "subject": "responzai Prüfbericht KW {{ $now.format('WW') }}",
         "text": "Wöchentlicher Prüfbericht für responzai.eu\n\nGeprüfte Claims: {{ $json.total_claims }}\nVerifiziert: {{ $json.verified_claims }}\nProbleme: {{ $json.issues_found }}\n\nAlles in Ordnung."
