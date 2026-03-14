@@ -1,16 +1,29 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
+from api.security import limiter
 
 app = FastAPI(
     title="responzai Verifier API",
-    description="Multi-Agent Verification System für responzai",
+    description="Multi-Agent Verification System fuer responzai",
     version="1.0.0"
 )
 
-# CORS erlauben (damit die Website auf die API zugreifen kann)
+# Rate Limiter registrieren
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# CORS: nur responzai.eu und localhost fuer lokale Entwicklung
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://responzai.eu"],
+    allow_origins=[
+        "https://responzai.eu",
+        "https://www.responzai.eu",
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ],
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
