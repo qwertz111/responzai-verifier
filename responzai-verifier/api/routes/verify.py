@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, model_validator
 from typing import Optional, Dict, Any
 from datetime import datetime
+
+from api.security import limiter, require_api_key
 
 router = APIRouter()
 
@@ -86,7 +88,8 @@ def _build_response(result: dict, source: str) -> dict:
 
 
 @router.post("/verify")
-async def verify_content(request: VerifyRequest):
+@limiter.limit("5/minute")
+async def verify_content(request: Request, body: VerifyRequest, _: str = Depends(require_api_key)):
     """
     Startet einen Prueflauf fuer einen Text oder eine URL.
 
@@ -97,17 +100,18 @@ async def verify_content(request: VerifyRequest):
         from pipeline.orchestrator import build_pipeline
 
         pipeline = build_pipeline()
-        initial_state = _build_initial_state(request.text, request.url)
+        initial_state = _build_initial_state(body.text, body.url)
         result = await pipeline.ainvoke(initial_state)
 
-        return _build_response(result, request.source or request.url or "text")
+        return _build_response(result, body.source or body.url or "text")
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Pipeline error: {str(e)}")
 
 
 @router.post("/verify/draft")
-async def verify_draft(request: DraftRequest):
+@limiter.limit("5/minute")
+async def verify_draft(request: Request, body: DraftRequest, _: str = Depends(require_api_key)):
     """
     Prueft einen Entwurf auf Publish-Bereitschaft.
 
@@ -120,10 +124,10 @@ async def verify_draft(request: DraftRequest):
         from pipeline.orchestrator import build_pipeline
 
         pipeline = build_pipeline()
-        initial_state = _build_initial_state(request.text, request.url)
+        initial_state = _build_initial_state(body.text, body.url)
         result = await pipeline.ainvoke(initial_state)
 
-        response = _build_response(result, request.source or request.url or "draft")
+        response = _build_response(result, body.source or body.url or "draft")
 
         # Map verdict to n8n-compatible recommendation
         verdict = response["verdict"]
