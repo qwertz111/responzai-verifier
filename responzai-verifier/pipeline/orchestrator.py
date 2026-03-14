@@ -215,19 +215,66 @@ async def lena_step(state: PipelineState) -> PipelineState:
 
 
 async def david_step(state: PipelineState) -> PipelineState:
-    """David optimiert die Texte sprachlich."""
-    # David arbeitet an allen Texten, nicht nur an problematischen
-    state["text_improvements"] = []  # Wird befüllt
+    """David optimiert den Quelltext sprachlich nach responzai-Stilguide."""
+    from agents.david_draft.style_guide import check_style
+    from agents.david_draft.rewriter import rewrite_text
 
-    print("David: Textoptimierung abgeschlossen.")
+    source_text = state.get("source_text", "")
+    if not source_text:
+        state["text_improvements"] = []
+        print("David: Kein Quelltext vorhanden, uebersprungen.")
+        return state
+
+    try:
+        # 1. Regelbasierte Vorpruefung (Passiv, Satzlaenge, verbotene Woerter)
+        style_issues = check_style(source_text)
+
+        # 2. David (Claude Sonnet) ueberarbeitet den Text
+        result = await rewrite_text(source_text, style_issues)
+        state["text_improvements"] = result.get("changes", [])
+
+        print(f"David: {len(state['text_improvements'])} Textverbesserungen vorgeschlagen.")
+    except Exception as e:
+        state["text_improvements"] = [{
+            "error": str(e),
+            "reason": "David konnte den Text nicht optimieren."
+        }]
+        print(f"David: Fehler - {e}")
+
     return state
 
 
 async def uma_step(state: PipelineState) -> PipelineState:
-    """Uma prüft die Bedienungsfreundlichkeit."""
-    state["ux_issues"] = []  # Wird befüllt
+    """Uma prueft die Bedienungsfreundlichkeit des Quelltexts."""
+    from agents.uma_ux.structure_analyzer import analyze_structure
+    from agents.uma_ux.usability_rules import review_usability
 
-    print("Uma: UX-Prüfung abgeschlossen.")
+    source_text = state.get("source_text", "")
+    if not source_text:
+        state["ux_issues"] = []
+        print("Uma: Kein Quelltext vorhanden, uebersprungen.")
+        return state
+
+    try:
+        # Text in Abschnitte aufteilen (grob an Absaetzen)
+        paragraphs = [p.strip() for p in source_text.split("\n\n") if p.strip()]
+        sections = [{"content": p, "title": "", "level": None} for p in paragraphs]
+
+        # 1. Regelbasierte Strukturanalyse
+        structure_info = analyze_structure(sections)
+
+        # 2. Uma (Claude Sonnet) bewertet im Kontext
+        result = await review_usability(source_text, sections, structure_info)
+        state["ux_issues"] = result.get("issues", [])
+
+        print(f"Uma: {len(state['ux_issues'])} UX-Probleme gefunden.")
+    except Exception as e:
+        state["ux_issues"] = [{
+            "error": str(e),
+            "reason": "Uma konnte die UX-Pruefung nicht durchfuehren."
+        }]
+        print(f"Uma: Fehler - {e}")
+
     return state
 
 
