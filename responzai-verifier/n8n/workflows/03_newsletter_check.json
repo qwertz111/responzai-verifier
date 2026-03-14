@@ -44,7 +44,7 @@
     },
     {
       "parameters": {
-        "fromEmail": "verifier@responzai.eu",
+        "fromEmail": "responzai-verifier@xoppy.de",
         "toEmail": "={{$env.ALERT_EMAIL}}",
         "subject": "Newsletter-Prüfung: {{ $json.total_claims }} Claims, {{ $json.issues_found }} Probleme",
         "text": "Der neue Newsletter wurde geprüft.\n\nErgebnis:\n- Claims: {{ $json.total_claims }}\n- Verifiziert: {{ $json.verified_claims }}\n- Probleme: {{ $json.issues_found }}\n\nDetails im Dashboard."

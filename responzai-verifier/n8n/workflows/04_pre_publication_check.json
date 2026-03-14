@@ -56,7 +56,7 @@
     },
     {
       "parameters": {
-        "fromEmail": "verifier@responzai.eu",
+        "fromEmail": "responzai-verifier@xoppy.de",
         "toEmail": "={{$env.ALERT_EMAIL}}",
         "subject": "⚠ Veröffentlichung blockiert: {{ $json.issues_found }} Probleme",
         "text": "Ein Text wurde zur Veröffentlichung eingereicht, aber vom Verifier abgelehnt.\n\nProbleme: {{ $json.issues_found }}\nScore: {{ $json.score }}\n\nBitte prüfe und korrigiere den Text vor der Veröffentlichung."

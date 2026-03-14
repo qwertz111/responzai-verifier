@@ -66,7 +66,7 @@
     },
     {
       "parameters": {
-        "fromEmail": "pia@responzai.eu",
+        "fromEmail": "responzai-verifier@xoppy.de",
         "toEmail": "={{$env.ALERT_EMAIL}}",
         "subject": "Pia: Neue EUR-Lex Veröffentlichung",
         "text": "Pia hat eine neue Veröffentlichung gefunden:\n\n{{ $json.title }}\n{{ $json.link }}\n\nDie Wissensbasis wird automatisch aktualisiert. Ein neuer Prüflauf wird empfohlen."

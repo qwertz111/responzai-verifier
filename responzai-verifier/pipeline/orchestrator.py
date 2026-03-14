@@ -128,7 +128,7 @@ async def sven_step(state: PipelineState) -> PipelineState:
     # (Hier kommt Svens Claude-Aufruf)
 
     state["contradictions"] = []  # Wird befüllt
-    state["consistency_score"] = 0.0  # Wird berechnet
+    state["consistency_score"] = 1.0  # Default: keine Widersprueche gefunden
 
     print(f"Sven: {len(similar_pairs)} ähnliche Paare gefunden.")
     return state

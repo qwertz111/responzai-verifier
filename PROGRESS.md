@@ -99,40 +99,39 @@ Legende:
 - [x] [S] End-to-End Smoke-Test
 
 ## Phase 7: Repository-Trennung + GitHub-Setup
-- [ ] [S] GitHub-Repo `responzai-verifier` anlegen + Code pushen
-- [ ] [S] GitHub-Repo `responzai-knowledge` anlegen + Code pushen
-- [ ] [S] GitHub-Repo `responzai-web` anlegen + Code pushen
-- [ ] [S] CI/CD-Pipeline fuer responzai-verifier (GitHub Actions: Lint + Tests)
-- [ ] [S] CI/CD-Pipeline fuer responzai-web (GitHub Actions: Build + Deploy Cloudflare)
-- [ ] [S] README.md pro Repo (Setup-Anleitung, Architektur-Uebersicht)
-- [ ] [S] .env.example + Secrets-Dokumentation pro Repo
-- [ ] [S] Branch-Schutzregeln (main protected, PR-Reviews erforderlich)
-- [ ] [S] API-Endpunkt /verify/draft (Pre-Publication Check)
+- [x] [S] GitHub-Repo `responzai-verifier` anlegen + Code pushen
+- [x] [S] GitHub-Repo `responzai-knowledge` anlegen + Code pushen
+- [x] [S] GitHub-Repo `responzai-web` angelegt (wird nicht verwendet, Verify-Interface geht in responzai-website)
+- [x] [S] CI/CD-Pipeline fuer responzai-verifier (GitHub Actions: Lint + Tests)
+- [x] [S] README.md + .env.example + Secrets-Dokumentation (responzai-verifier + responzai-knowledge)
+- [x] [S] API-Endpunkt /verify/draft (Pre-Publication Check)
+- [x] [M] Branch-Schutzregeln fuer responzai-verifier + responzai-knowledge (GitHub Settings)
+- [x] [S] Verify-Interface (Nunjucks + Vanilla JS) in responzai-website integriert
 
 ## Phase 8: Server-Setup (Hetzner VPS + Docker)
-- [ ] [M] Hetzner VPS bestellen (CX21 oder CX31, Ubuntu 22.04)
-- [ ] [M] SSH-Key einrichten + Server absichern (Firewall, fail2ban)
-- [ ] [E] Server-Setup-Skript erstellen (Docker, Docker Compose, Nginx installieren)
-- [ ] [M] Domain konfigurieren (api.responzai.eu → Server-IP)
-- [ ] [E] Nginx-Reverse-Proxy + SSL (Let's Encrypt) Konfiguration
-- [ ] [M] Docker + Docker Compose auf Server installieren
+- [x] [M] Hetzner VPS bestellt (CX33, 4 vCPU, 8 GB RAM, Helsinki)
+- [x] [M] SSH-Key einrichten + Server absichern (Firewall, fail2ban)
+- [x] [E] Server-Setup-Skript erstellen (Docker, Docker Compose, Nginx installieren)
+- [x] [M] Domain konfigurieren (api.responzai.eu → Server-IP)
+- [x] [E] Nginx-Reverse-Proxy + SSL (Let's Encrypt) Konfiguration
+- [x] [M] Docker + Docker Compose auf Server installieren
 
 ## Phase 9: Deployment (Code auf Server)
-- [ ] [M] Git-Repos auf Server klonen
-- [ ] [M] .env Datei mit echten API-Keys befuellen (ANTHROPIC_API_KEY, VOYAGE_API_KEY, Postgres-Passwoerter)
-- [ ] [M] Docker Compose starten (Postgres + Verifier + n8n)
-- [ ] [M] Datenbank-Schema anwenden (schema.sql)
-- [ ] [M] Wissensbasis erstbefuellung (seed.py mit EU AI Act)
-- [ ] [M] API-Endpunkte testen (curl-Tests gegen live API)
-- [ ] [M] Frontend deployen (Cloudflare Pages)
+- [x] [M] Git-Repos auf Server klonen
+- [x] [M] .env Datei mit echten API-Keys befuellen (ANTHROPIC_API_KEY, VOYAGE_API_KEY, Postgres-Passwoerter)
+- [x] [M] Docker Compose starten (Postgres + Verifier + n8n)
+- [x] [M] Datenbank-Schema anwenden (schema.sql)
+- [x] [M] Wissensbasis erstbefuellung (seed.py mit EU AI Act)
+- [x] [M] API-Endpunkte testen (curl-Tests gegen live API)
+- [x] [M] Verify-Interface in responzai-website deployen (Cloudflare Pages, bestehendes Repo)
 
 ## Phase 10: n8n-Workflows (Automatisierung)
-- [ ] [E] n8n Workflow 1: Woechentlicher Prueflauf (Kap. 11.3)
-- [ ] [E] n8n Workflow 2: EUR-Lex Monitoring fuer Pia (Kap. 11.4)
-- [ ] [E] n8n Workflow 3: Newsletter-Pruefung (Kap. 11.5)
-- [ ] [E] n8n Workflow 4: Pre-Publication Check (CMS-Webhook → Pruefung → Freigabe/Ablehnung)
-- [ ] [M] SMTP-Konfiguration fuer E-Mail-Versand
-- [ ] [M] Workflows in n8n importieren und testen
+- [x] [E] n8n Workflow 1: Woechentlicher Prueflauf (Kap. 11.3)
+- [x] [E] n8n Workflow 2: EUR-Lex Monitoring fuer Pia (Kap. 11.4)
+- [x] [E] n8n Workflow 3: Newsletter-Pruefung (Kap. 11.5)
+- [x] [E] n8n Workflow 4: Pre-Publication Check (CMS-Webhook → Pruefung → Freigabe/Ablehnung)
+- [x] [M] SMTP-Konfiguration fuer E-Mail-Versand
+- [x] [M] Workflows in n8n importieren und testen
 
 ---
 
