@@ -18,6 +18,7 @@ async def find_relevant_chunks(claim_text: str, top_k: int = 5) -> list:
     irrelevante Stellen die Bewertung verwässern.
     """
     query_embedding = create_query_embedding(claim_text)
+    embedding_str = str(query_embedding)  # pgvector expects "[0.1, 0.2, ...]" as string
 
     database_url = os.environ["DATABASE_URL"]
     conn = await asyncpg.connect(database_url)
@@ -29,7 +30,7 @@ async def find_relevant_chunks(claim_text: str, top_k: int = 5) -> list:
         JOIN sources s ON c.source_id = s.id
         ORDER BY c.embedding <=> $1::vector
         LIMIT $2
-    """, query_embedding, top_k)
+    """, embedding_str, top_k)
 
     await conn.close()
 
