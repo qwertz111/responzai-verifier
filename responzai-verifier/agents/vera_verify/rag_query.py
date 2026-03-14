@@ -1,6 +1,7 @@
 # agents/vera_verify/rag_query.py
 
 import asyncpg
+import os
 from processing.embedding import create_query_embedding
 
 async def find_relevant_chunks(claim_text: str, top_k: int = 5) -> list:
@@ -18,7 +19,8 @@ async def find_relevant_chunks(claim_text: str, top_k: int = 5) -> list:
     """
     query_embedding = create_query_embedding(claim_text)
 
-    conn = await asyncpg.connect("postgresql://responzai:PASSWORT@localhost/verifier")
+    database_url = os.environ["DATABASE_URL"]
+    conn = await asyncpg.connect(database_url)
 
     rows = await conn.fetch("""
         SELECT c.id, c.content, c.metadata, s.title,
