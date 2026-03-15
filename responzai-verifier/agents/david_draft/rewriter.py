@@ -5,7 +5,7 @@ import anthropic
 from json_repair import repair_json
 from agents.david_draft.prompt import DAVID_SYSTEM_PROMPT
 
-client = anthropic.Anthropic()
+client = anthropic.AsyncAnthropic()
 
 
 async def rewrite_text(text: str, style_issues: list) -> dict:
@@ -32,7 +32,7 @@ async def rewrite_text(text: str, style_issues: list) -> dict:
         "gefundene_stilprobleme": style_issues
     }, ensure_ascii=False, indent=2)
 
-    response = client.messages.create(
+    response = await client.messages.create(
         model="claude-sonnet-4-5",
         max_tokens=8192,
         temperature=0,

@@ -6,7 +6,7 @@ from .prompt import SIMON_SYSTEM_PROMPT
 import json
 from json_repair import repair_json
 
-client = anthropic.Anthropic()
+client = anthropic.AsyncAnthropic()
 
 # Automatisches Chunking ab dieser Textlänge (Zeichen)
 CHUNK_THRESHOLD = 60_000   # ~15.000 Tokens Input
@@ -42,7 +42,7 @@ def _split_chunks(text: str) -> list[str]:
 
 async def _extract_from_chunk(chunk: str, source_url: str, id_offset: int) -> list[dict]:
     """Ruft Claude für einen einzelnen Chunk auf und gibt die Claims zurück."""
-    message = client.messages.create(
+    message = await client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=8192,
         temperature=0,
@@ -156,7 +156,7 @@ async def extract_claims(text: str, source_url: str) -> dict:
 
 async def _extract_single(text: str, source_url: str) -> dict:
     """Verarbeitet einen kurzen Text ohne Chunking."""
-    message = client.messages.create(
+    message = await client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=8192,
         temperature=0,

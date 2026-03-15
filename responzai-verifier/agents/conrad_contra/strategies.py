@@ -3,7 +3,7 @@
 import anthropic
 from agents.vera_verify.rag_query import find_relevant_chunks
 
-client = anthropic.Anthropic()
+client = anthropic.AsyncAnthropic()
 
 async def inverse_rag_search(claim_text: str) -> list:
     """

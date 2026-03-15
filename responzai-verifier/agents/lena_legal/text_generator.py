@@ -5,7 +5,7 @@ from json_repair import repair_json
 import anthropic
 from agents.lena_legal.prompt import LENA_SYSTEM_PROMPT
 
-client = anthropic.Anthropic()
+client = anthropic.AsyncAnthropic()
 
 
 async def generate_legal_update(claim: dict, sources: list) -> dict:
@@ -39,7 +39,7 @@ async def generate_legal_update(claim: dict, sources: list) -> dict:
         "source_passages": source_passages
     }, ensure_ascii=False, indent=2)
 
-    response = client.messages.create(
+    response = await client.messages.create(
         model="claude-opus-4-5",
         max_tokens=2048,
         temperature=0,

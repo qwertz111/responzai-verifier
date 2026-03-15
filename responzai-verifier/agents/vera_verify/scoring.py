@@ -6,7 +6,7 @@ from .rag_query import find_relevant_chunks
 import json
 from json_repair import repair_json
 
-client = anthropic.Anthropic()
+client = anthropic.AsyncAnthropic()
 
 async def verify_claim(claim: dict) -> dict:
     """
@@ -27,7 +27,7 @@ async def verify_claim(claim: dict) -> dict:
     ])
 
     # Schritt 3: An Claude schicken
-    message = client.messages.create(
+    message = await client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=2048,
         temperature=0,
