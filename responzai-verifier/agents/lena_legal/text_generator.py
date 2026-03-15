@@ -4,6 +4,7 @@ import json
 from json_repair import repair_json
 import anthropic
 from agents.lena_legal.prompt import LENA_SYSTEM_PROMPT
+from pipeline.config import LLM_MODEL_STRONG
 
 client = anthropic.AsyncAnthropic()
 
@@ -40,7 +41,7 @@ async def generate_legal_update(claim: dict, sources: list) -> dict:
     }, ensure_ascii=False, indent=2)
 
     response = await client.messages.create(
-        model="claude-opus-4-5",
+        model=LLM_MODEL_STRONG,
         max_tokens=2048,
         temperature=0,
         system=LENA_SYSTEM_PROMPT,

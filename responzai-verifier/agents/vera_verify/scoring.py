@@ -3,6 +3,7 @@
 import anthropic
 from .prompt import VERA_SYSTEM_PROMPT
 from .rag_query import find_relevant_chunks
+from pipeline.config import LLM_MODEL
 import json
 from json_repair import repair_json
 
@@ -28,7 +29,7 @@ async def verify_claim(claim: dict) -> dict:
 
     # Schritt 3: An Claude schicken
     message = await client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model=LLM_MODEL,
         max_tokens=2048,
         temperature=0,
         system=VERA_SYSTEM_PROMPT,

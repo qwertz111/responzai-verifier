@@ -4,6 +4,7 @@ import json
 import anthropic
 from json_repair import repair_json
 from agents.uma_ux.prompt import UMA_SYSTEM_PROMPT
+from pipeline.config import LLM_MODEL
 
 client = anthropic.AsyncAnthropic()
 
@@ -38,7 +39,7 @@ async def review_usability(text: str, sections: list, structure_info: dict) -> d
     }, ensure_ascii=False, indent=2)
 
     response = await client.messages.create(
-        model="claude-sonnet-4-5",
+        model=LLM_MODEL,
         max_tokens=8192,
         temperature=0,
         system=UMA_SYSTEM_PROMPT,
