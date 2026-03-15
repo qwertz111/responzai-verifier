@@ -83,5 +83,5 @@ async def verify_document(
         "total_claims": len(result["claims"]),
         "verified_claims": len(result["verified_claims"]),
         "issues_found": len(result["refuted_claims"]) + len(result["weakened_claims"]),
-        "report": result["verification_report"],
+        "verification_report": result["verification_report"],
     }
