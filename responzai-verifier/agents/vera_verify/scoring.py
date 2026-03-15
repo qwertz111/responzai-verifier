@@ -1,42 +1,24 @@
 # agents/vera_verify/scoring.py
 
-import anthropic
 from .prompt import VERA_SYSTEM_PROMPT
 from .rag_query import find_relevant_chunks
-from pipeline.config import LLM_MODEL
+from api.llm_client import call_llm
 import json
 from json_repair import repair_json
 
-client = anthropic.AsyncAnthropic()
 
 async def verify_claim(claim: dict) -> dict:
     """
     Prüft eine einzelne Behauptung gegen die Wissensbasis.
-
-    Ablauf:
-    1. Relevante Quellenpassagen finden (RAG)
-    2. Behauptung + Quellen an Claude schicken
-    3. Bewertung zurückbekommen
     """
-    # Schritt 1: Relevante Stellen finden
     relevant_chunks = await find_relevant_chunks(claim["claim_text"])
 
-    # Schritt 2: Quellen als Kontext aufbereiten
     context = "\n\n".join([
         f"[Quelle: {chunk['source']}]\n{chunk['text']}"
         for chunk in relevant_chunks
     ])
 
-    # Schritt 3: An Claude schicken
-    message = await client.messages.create(
-        model=LLM_MODEL,
-        max_tokens=2048,
-        temperature=0,
-        system=VERA_SYSTEM_PROMPT,
-        messages=[
-            {
-                "role": "user",
-                "content": f"""BEHAUPTUNG:
+    user_message = f"""BEHAUPTUNG:
 {claim['claim_text']}
 
 KATEGORIE: {claim['category']}
@@ -45,14 +27,26 @@ QUELLENPASSAGEN AUS DER WISSENSBASIS:
 {context}
 
 Bewerte diese Behauptung auf Basis der Quellenpassagen."""
-            }
-        ]
+
+    response_text = await call_llm(
+        system=VERA_SYSTEM_PROMPT,
+        user_message=user_message,
+        max_tokens=2048,
     )
 
-    # Ergebnis parsen
-    response_text = message.content[0].text
     json_start = response_text.find("{")
     json_end = response_text.rfind("}") + 1
-    result = json.loads(repair_json(response_text[json_start:json_end]))
+
+    if json_start == -1 or json_end == 0:
+        return {"score": 0.0, "reasoning": "Keine JSON-Antwort von Vera", "supporting_passages": []}
+
+    try:
+        result = json.loads(repair_json(response_text[json_start:json_end]))
+    except Exception:
+        return {"score": 0.0, "reasoning": "JSON-Parsing fehlgeschlagen", "supporting_passages": []}
+
+    # Sicherstellen dass score existiert
+    if "score" not in result:
+        result["score"] = 0.0
 
     return result

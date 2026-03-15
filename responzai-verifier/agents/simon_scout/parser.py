@@ -1,13 +1,10 @@
 # agents/simon_scout/parser.py
 
 import asyncio
-import anthropic
 from .prompt import SIMON_SYSTEM_PROMPT
-from pipeline.config import LLM_MODEL
+from api.llm_client import call_llm
 import json
 from json_repair import repair_json
-
-client = anthropic.AsyncAnthropic()
 
 # Automatisches Chunking ab dieser Textlänge (Zeichen)
 CHUNK_THRESHOLD = 60_000   # ~15.000 Tokens Input
@@ -16,21 +13,12 @@ CHUNK_OVERLAP   = 2_000    # ~500 Tokens Overlap (Satzgrenzen abfangen)
 
 
 def _split_chunks(text: str) -> list[str]:
-    """
-    Zerlegt einen langen Text in überlappende Chunks.
-
-    Warum auf Absatzgrenzen splitten?
-    Claims erstrecken sich selten über Absatzgrenzen hinaus.
-    Ein Absatz-Split reduziert die Chance, dass ein Claim
-    genau an der Chunk-Grenze abgeschnitten wird.
-    Der Overlap fängt den Rest ab.
-    """
+    """Zerlegt einen langen Text in überlappende Chunks."""
     chunks = []
     start = 0
     while start < len(text):
         end = start + CHUNK_SIZE
         if end < len(text):
-            # Auf den letzten Absatzumbruch vor end zurückgehen
             boundary = text.rfind("\n\n", start, end)
             if boundary == -1:
                 boundary = text.rfind("\n", start, end)
@@ -43,27 +31,21 @@ def _split_chunks(text: str) -> list[str]:
 
 async def _extract_from_chunk(chunk: str, source_url: str, id_offset: int) -> list[dict]:
     """Ruft Claude für einen einzelnen Chunk auf und gibt die Claims zurück."""
-    message = await client.messages.create(
-        model=LLM_MODEL,
-        max_tokens=8192,
-        temperature=0,
-        system=SIMON_SYSTEM_PROMPT,
-        messages=[
-            {
-                "role": "user",
-                "content": f"""Analysiere diesen Text und extrahiere
-                alle prüfbaren Behauptungen.
+    try:
+        response_text = await call_llm(
+            system=SIMON_SYSTEM_PROMPT,
+            user_message=f"""Analysiere diesen Text und extrahiere alle prüfbaren Behauptungen.
 
-                URL: {source_url}
+URL: {source_url}
 
-                TEXT:
-                {chunk}
-                """
-            }
-        ]
-    )
+TEXT:
+{chunk}""",
+            max_tokens=4096,
+        )
+    except Exception as e:
+        print(f"Simon: API-Fehler in Chunk ({e}).")
+        return []
 
-    response_text = message.content[0].text
     json_start = response_text.find("{")
     json_end = response_text.rfind("}") + 1
 
@@ -77,8 +59,6 @@ async def _extract_from_chunk(chunk: str, source_url: str, id_offset: int) -> li
         return []
 
     claims = data.get("claims", [])
-
-    # IDs neu vergeben damit keine Kollisionen zwischen Chunks entstehen
     for i, claim in enumerate(claims):
         claim["id"] = f"claim_{id_offset + i + 1:03d}"
 
@@ -86,13 +66,7 @@ async def _extract_from_chunk(chunk: str, source_url: str, id_offset: int) -> li
 
 
 def _deduplicate(claims: list[dict]) -> list[dict]:
-    """
-    Entfernt doppelte Claims, die durch den Chunk-Overlap entstehen können.
-
-    Strategie: Zwei Claims gelten als Duplikat, wenn die ersten 80 Zeichen
-    ihres claim_text identisch sind (nach Normalisierung).
-    Das ist schnell und trifft die relevanten Fälle ohne NLP-Overhead.
-    """
+    """Entfernt doppelte Claims die durch Chunk-Overlap entstehen."""
     seen = set()
     unique = []
     for claim in claims:
@@ -104,43 +78,18 @@ def _deduplicate(claims: list[dict]) -> list[dict]:
 
 
 async def extract_claims(text: str, source_url: str) -> dict:
-    """
-    Schickt den Text an Claude und bekommt strukturierte Claims zurück.
-
-    Warum temperature=0?
-    Wir wollen, dass Simon bei demselben Text immer dieselben
-    Behauptungen findet. Kreativität ist hier nicht erwünscht.
-    Reproduzierbarkeit ist wichtiger.
-
-    Warum automatisches Chunking?
-    Bei Dokumenten > 60.000 Zeichen (~150 KB reiner Text) wird
-    der Text in Chunks von je 40.000 Zeichen mit 2.000 Zeichen
-    Overlap aufgeteilt. So bleibt die Output-Qualität konstant
-    und der 8192-Token-Limit des Outputs wird nicht gesprengt.
-    """
+    """Extrahiert Claims aus Text. Bei langen Texten automatisches Chunking."""
     if len(text) <= CHUNK_THRESHOLD:
-        # Kurzer Text: direkt verarbeiten
         return await _extract_single(text, source_url)
 
-    # Langer Text: Chunking
     chunks = _split_chunks(text)
     print(f"Simon: Text zu lang ({len(text)} Zeichen), aufgeteilt in {len(chunks)} Chunks.")
 
-    # Chunks parallel verarbeiten (max 5 gleichzeitig)
-    semaphore = asyncio.Semaphore(5)
-
-    async def process_chunk(i, chunk, offset):
-        async with semaphore:
-            claims = await _extract_from_chunk(chunk, source_url, offset)
-            print(f"Simon: Chunk {i+1}/{len(chunks)} → {len(claims)} Claims.")
-            return claims
-
-    # Offsets vorab berechnen (je 50 IDs pro Chunk reservieren)
-    tasks = [process_chunk(i, chunk, i * 50) for i, chunk in enumerate(chunks)]
-    results = await asyncio.gather(*tasks)
-
+    # Chunks sequentiell verarbeiten (Rate Limit schonen)
     all_claims = []
-    for chunk_claims in results:
+    for i, chunk in enumerate(chunks):
+        chunk_claims = await _extract_from_chunk(chunk, source_url, len(all_claims))
+        print(f"Simon: Chunk {i+1}/{len(chunks)} → {len(chunk_claims)} Claims.")
         all_claims.extend(chunk_claims)
 
     all_claims = _deduplicate(all_claims)
@@ -157,27 +106,21 @@ async def extract_claims(text: str, source_url: str) -> dict:
 
 async def _extract_single(text: str, source_url: str) -> dict:
     """Verarbeitet einen kurzen Text ohne Chunking."""
-    message = await client.messages.create(
-        model=LLM_MODEL,
-        max_tokens=8192,
-        temperature=0,
-        system=SIMON_SYSTEM_PROMPT,
-        messages=[
-            {
-                "role": "user",
-                "content": f"""Analysiere diesen Text und extrahiere
-                alle prüfbaren Behauptungen.
+    try:
+        response_text = await call_llm(
+            system=SIMON_SYSTEM_PROMPT,
+            user_message=f"""Analysiere diesen Text und extrahiere alle prüfbaren Behauptungen.
 
-                URL: {source_url}
+URL: {source_url}
 
-                TEXT:
-                {text}
-                """
-            }
-        ]
-    )
+TEXT:
+{text}""",
+            max_tokens=4096,
+        )
+    except Exception as e:
+        print(f"Simon: API-Fehler ({e}). Gebe leere Claims zurück.")
+        return {"claims": []}
 
-    response_text = message.content[0].text
     json_start = response_text.find("{")
     json_end = response_text.rfind("}") + 1
 

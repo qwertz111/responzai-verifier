@@ -1,51 +1,29 @@
 # agents/david_draft/rewriter.py
 
 import json
-import anthropic
 from json_repair import repair_json
 from agents.david_draft.prompt import DAVID_SYSTEM_PROMPT
-from pipeline.config import LLM_MODEL
-
-client = anthropic.AsyncAnthropic()
+from api.llm_client import call_llm
 
 
 async def rewrite_text(text: str, style_issues: list) -> dict:
-    """
-    David überarbeitet einen Text nach den responzai-Stilregeln.
-
-    Warum übergeben wir die gefundenen Stilprobleme mit?
-    Die regelbasierte Vorprüfung in style_guide.py findet einfache
-    Muster. David (Claude) bekommt diese Liste als Hinweise, kann
-    aber auch darüber hinaus sprachliche Probleme erkennen und
-    im richtigen Kontext bewerten.
-
-    Ablauf:
-    1. Text und gefundene Stilprobleme werden als JSON übergeben.
-    2. David erstellt einen strukturierten Diff aller Änderungen.
-    3. Der Output enthält Lesbarkeits-Scores vor und nach der
-       Überarbeitung sowie eine kompakte Zusammenfassung.
-
-    temperature=0 stellt sicher, dass David reproduzierbar
-    auf die gleichen Probleme reagiert.
-    """
+    """David überarbeitet einen Text nach den responzai-Stilregeln."""
     user_message = json.dumps({
         "text": text,
         "gefundene_stilprobleme": style_issues
     }, ensure_ascii=False, indent=2)
 
-    response = await client.messages.create(
-        model=LLM_MODEL,
-        max_tokens=8192,
-        temperature=0,
-        system=DAVID_SYSTEM_PROMPT,
-        messages=[
-            {"role": "user", "content": user_message}
-        ]
-    )
+    try:
+        raw = await call_llm(
+            system=DAVID_SYSTEM_PROMPT,
+            user_message=user_message,
+            max_tokens=2048,
+        )
+    except Exception as e:
+        print(f"David: API-Fehler ({e}).")
+        return {"changes": [], "style_score": 0.0}
 
-    raw = response.content[0].text.strip()
-
-    # JSON-Block extrahieren falls Claude Prosa darum herum schreibt
+    raw = raw.strip()
     if "```" in raw:
         raw = raw.split("```")[1]
         if raw.startswith("json"):
@@ -54,7 +32,7 @@ async def rewrite_text(text: str, style_issues: list) -> dict:
     try:
         output = json.loads(repair_json(raw))
     except Exception as e:
-        print(f"David: JSON-Parsing fehlgeschlagen ({e}). Gebe leeres Ergebnis zurück.")
-        output = {"text_improvements": [], "style_score": 0.0}
+        print(f"David: JSON-Parsing fehlgeschlagen ({e}).")
+        return {"changes": [], "style_score": 0.0}
 
     return output

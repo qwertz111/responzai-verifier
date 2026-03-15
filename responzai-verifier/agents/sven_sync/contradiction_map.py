@@ -1,32 +1,13 @@
 # agents/sven_sync/contradiction_map.py
 
-import anthropic
 import json
 from json_repair import repair_json
 from .prompt import SVEN_SYSTEM_PROMPT
-from pipeline.config import LLM_MODEL
-
-client = anthropic.AsyncAnthropic()
+from api.llm_client import call_llm
 
 
 async def check_contradictions(similar_pairs: list) -> dict:
-    """
-    Prüft ähnliche Claim-Paare auf tatsächliche Widersprüche.
-
-    Warum ein eigener Schritt?
-    Ähnlichkeit ist nicht gleich Widerspruch. Zwei Behauptungen
-    können sich ähnlich sein und trotzdem dasselbe sagen - oder
-    sich direkt widersprechen. Claude entscheidet, was zutrifft.
-
-    Ablauf:
-    1. Jedes ähnliche Paar wird einzeln an Claude geschickt
-    2. Claude klassifiziert: Widerspruch, Duplikat oder beides
-    3. Schweregrade werden gezählt und in den consistency_score eingerechnet
-
-    consistency_score-Formel:
-    1.0 - (critical * 0.3 + major * 0.15 + minor * 0.05)
-    Minimum ist 0.0 (Score wird nicht negativ).
-    """
+    """Prüft ähnliche Claim-Paare auf tatsächliche Widersprüche."""
     contradictions = []
     duplicates = []
 
@@ -35,15 +16,10 @@ async def check_contradictions(similar_pairs: list) -> dict:
         claim_b = pair["claim_b"]
         similarity = pair["similarity"]
 
-        message = await client.messages.create(
-            model=LLM_MODEL,
-            max_tokens=1024,
-            temperature=0,
-            system=SVEN_SYSTEM_PROMPT,
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"""Vergleiche diese zwei Behauptungen und prüfe, ob sie sich widersprechen.
+        try:
+            response_text = await call_llm(
+                system=SVEN_SYSTEM_PROMPT,
+                user_message=f"""Vergleiche diese zwei Behauptungen und prüfe, ob sie sich widersprechen.
 
 BEHAUPTUNG A (ID: {claim_a['id']}):
 {claim_a['claim_text']}
@@ -56,19 +32,23 @@ Quelle: {claim_b.get('source_url', 'unbekannt')}
 Ähnlichkeit: {similarity:.2f}
 
 Antworte ausschließlich im vorgegebenen JSON-Format.
-Wenn kein Widerspruch vorliegt, gib leere Listen zurück."""
-                }
-            ]
-        )
+Wenn kein Widerspruch vorliegt, gib leere Listen zurück.""",
+                max_tokens=1024,
+            )
+        except Exception as e:
+            print(f"Sven: API-Fehler bei Paar ({e}). Ueberspringe.")
+            continue
 
-        response_text = message.content[0].text
         json_start = response_text.find("{")
         json_end = response_text.rfind("}") + 1
 
         if json_start == -1:
             continue
 
-        result = json.loads(repair_json(response_text[json_start:json_end]))
+        try:
+            result = json.loads(repair_json(response_text[json_start:json_end]))
+        except Exception:
+            continue
 
         contradictions.extend(result.get("contradictions", []))
         duplicates.extend(result.get("duplicates", []))

@@ -1,9 +1,6 @@
 # agents/conrad_contra/strategies.py
 
-import anthropic
 from agents.vera_verify.rag_query import find_relevant_chunks
-
-client = anthropic.AsyncAnthropic()
 
 async def inverse_rag_search(claim_text: str) -> list:
     """
