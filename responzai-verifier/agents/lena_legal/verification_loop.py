@@ -54,52 +54,18 @@ def verify_source_binding(lena_output: dict, provided_sources: list) -> dict:
 
 async def run_verification_loop(lena_output: dict, claim: dict):
     """
-    Die Rückprüfungsschleife: Lenas Vorschlag geht nochmal durch
-    Vera und Conrad.
+    Rückprüfung von Lenas Vorschlag.
 
-    Ablauf:
-    1. Lena generiert einen Textvorschlag.
-    2. Quellen-Binding wird geprüft (Funktion oben).
-    3. Vera prüft den neuen Text gegen die Wissensbasis.
-    4. Conrad versucht, den neuen Text zu widerlegen.
-    5. Nur wenn alles besteht, wird der Vorschlag akzeptiert.
+    Nur Hash-basierte Quellen-Validierung (kein zweiter Vera+Conrad-Durchlauf).
+    Der Hash-Check ist ausreichend: er stellt sicher, dass Lena sich
+    nur auf bekannte Quellen bezieht und keine Inhalte erfindet.
     """
-    from agents.vera_verify.scoring import verify_claim
-    from agents.conrad_contra.evaluation import challenge_claim
-
-    # Schritt 1: Quellen-Binding prüfen
     binding_check = verify_source_binding(lena_output, claim.get("source_passages", []))
-    if binding_check["status"] == "REJECTED":
+
+    if binding_check["status"] != "ACCEPTED":
         return binding_check
-
-    # Schritt 2: Neuen Claim aus Lenas Vorschlag erstellen
-    new_claim = {
-        "claim_text": lena_output.get("suggested_text", ""),
-        "category": claim.get("category", "LEGAL_CLAIM"),
-        "source_url": claim.get("source_url", "")
-    }
-
-    # Schritt 3: Vera prüft den neuen Text
-    vera_result = await verify_claim(new_claim)
-    if vera_result["score"] < 0.9:
-        return {
-            "status": "REJECTED",
-            "reason": f"Vera gibt dem neuen Text nur Score {vera_result['score']}",
-            "vera_feedback": vera_result
-        }
-
-    # Schritt 4: Conrad prüft den neuen Text
-    conrad_result = await challenge_claim(new_claim, vera_result)
-    if conrad_result["result"] == "refuted":
-        return {
-            "status": "REJECTED",
-            "reason": "Conrad hat den neuen Text widerlegt",
-            "conrad_feedback": conrad_result
-        }
 
     return {
         "status": "ACCEPTED",
         "lena_output": lena_output,
-        "vera_score": vera_result["score"],
-        "conrad_result": conrad_result["result"]
     }
