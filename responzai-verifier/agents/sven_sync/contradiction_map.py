@@ -2,6 +2,7 @@
 
 import anthropic
 import json
+from json_repair import repair_json
 from .prompt import SVEN_SYSTEM_PROMPT
 
 client = anthropic.Anthropic()
@@ -66,7 +67,7 @@ Wenn kein Widerspruch vorliegt, gib leere Listen zurück."""
         if json_start == -1:
             continue
 
-        result = json.loads(response_text[json_start:json_end])
+        result = json.loads(repair_json(response_text[json_start:json_end]))
 
         contradictions.extend(result.get("contradictions", []))
         duplicates.extend(result.get("duplicates", []))

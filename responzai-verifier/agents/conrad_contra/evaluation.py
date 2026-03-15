@@ -4,6 +4,7 @@ from .prompt import CONRAD_SYSTEM_PROMPT
 from .strategies import inverse_rag_search
 import anthropic
 import json
+from json_repair import repair_json
 
 client = anthropic.Anthropic()
 
@@ -55,6 +56,6 @@ Versuche diese Behauptung zu widerlegen. Wende alle vier Strategien an."""
     response_text = message.content[0].text
     json_start = response_text.find("{")
     json_end = response_text.rfind("}") + 1
-    result = json.loads(response_text[json_start:json_end])
+    result = json.loads(repair_json(response_text[json_start:json_end]))
 
     return result

@@ -2,6 +2,7 @@
 
 import anthropic
 import json
+from json_repair import repair_json
 from .prompt import PIA_SYSTEM_PROMPT
 from .monitors import check_eurlex_updates
 
@@ -76,7 +77,7 @@ Antworte ausschließlich im vorgegebenen JSON-Format."""
             "update_suggestion": None
         }
 
-    result = json.loads(response_text[json_start:json_end])
+    result = json.loads(repair_json(response_text[json_start:json_end]))
 
     # claim_id sicherstellen (Claude könnte sie weglassen)
     result["claim_id"] = claim.get("id", result.get("claim_id", "unbekannt"))
