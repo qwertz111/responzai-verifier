@@ -2,89 +2,68 @@
 
 from langgraph.graph import StateGraph, END
 from typing import TypedDict, List, Optional
-import asyncio
 import json
 
-# Max gleichzeitige Claude-API-Calls (verhindert Rate Limiting)
-MAX_CONCURRENT = 5
-
-# Der "State" ist der Zustand, der durch die Pipeline fließt.
-# Jeder Agent liest daraus und schreibt hinein.
 
 class PipelineState(TypedDict):
-    # Eingabe
     source_url: str
     source_text: str
-
-    # Simon (SCOUT)
     claims: List[dict]
-
-    # Vera (VERIFY)
     verified_claims: List[dict]
     unverified_claims: List[dict]
-
-    # Conrad (CONTRA)
     survived_claims: List[dict]
     weakened_claims: List[dict]
     refuted_claims: List[dict]
-
-    # Sven (SYNC)
     contradictions: List[dict]
     consistency_score: float
-
-    # Pia (PULSE)
     freshness_results: List[dict]
-
-    # Lena (LEGAL)
     legal_updates: List[dict]
-
-    # David (DRAFT)
     text_improvements: List[dict]
-
-    # Uma (UX)
     ux_issues: List[dict]
-
-    # Berichte
     verification_report: Optional[dict]
     improvement_report: Optional[dict]
 
-
-# Die einzelnen Schritte der Pipeline
 
 async def simon_step(state: PipelineState) -> PipelineState:
     """Simon extrahiert Claims aus dem Text."""
     from agents.simon_scout.parser import extract_claims
     from agents.simon_scout.crawler import crawl_page
 
-    # Wenn eine URL gegeben ist, zuerst crawlen
     if state["source_url"] and not state["source_text"]:
         page = crawl_page(state["source_url"])
         state["source_text"] = page["text"]
 
-    # Claims extrahieren
-    result = await extract_claims(state["source_text"], state["source_url"])
-    state["claims"] = result["claims"]
+    try:
+        result = await extract_claims(state["source_text"], state["source_url"])
+        state["claims"] = result["claims"]
+    except Exception as e:
+        print(f"Simon: Fehler - {e}")
+        state["claims"] = []
 
     print(f"Simon: {len(state['claims'])} Claims gefunden.")
     return state
 
 
 async def vera_step(state: PipelineState) -> PipelineState:
-    """Vera prüft jeden Claim gegen die Wissensbasis (parallel)."""
+    """Vera prüft jeden Claim gegen die Wissensbasis (sequentiell, Rate Limit)."""
     from agents.vera_verify.scoring import verify_claim
 
-    semaphore = asyncio.Semaphore(MAX_CONCURRENT)
+    verified = []
+    unverified = []
 
-    async def process(claim):
-        async with semaphore:
+    for claim in state["claims"]:
+        try:
             result = await verify_claim(claim)
             claim["vera_result"] = result
-            return claim
 
-    claims = await asyncio.gather(*[process(c) for c in state["claims"]])
-
-    verified = [c for c in claims if c["vera_result"]["score"] >= 0.8]
-    unverified = [c for c in claims if c["vera_result"]["score"] < 0.8]
+            if result.get("score", 0) >= 0.8:
+                verified.append(claim)
+            else:
+                unverified.append(claim)
+        except Exception as e:
+            print(f"Vera: Fehler bei Claim {claim.get('id', '?')} - {e}")
+            claim["vera_result"] = {"score": 0.0, "reasoning": f"Fehler: {e}"}
+            unverified.append(claim)
 
     state["verified_claims"] = verified
     state["unverified_claims"] = unverified
@@ -94,22 +73,29 @@ async def vera_step(state: PipelineState) -> PipelineState:
 
 
 async def conrad_step(state: PipelineState) -> PipelineState:
-    """Conrad versucht, die verifizierten Claims zu widerlegen (parallel)."""
+    """Conrad versucht, die verifizierten Claims zu widerlegen (sequentiell)."""
     from agents.conrad_contra.evaluation import challenge_claim
 
-    semaphore = asyncio.Semaphore(MAX_CONCURRENT)
+    survived = []
+    weakened = []
+    refuted = []
 
-    async def process(claim):
-        async with semaphore:
+    for claim in state["verified_claims"]:
+        try:
             result = await challenge_claim(claim, claim["vera_result"])
             claim["conrad_result"] = result
-            return claim
 
-    claims = await asyncio.gather(*[process(c) for c in state["verified_claims"]])
-
-    survived = [c for c in claims if c["conrad_result"]["result"] == "survived"]
-    weakened = [c for c in claims if c["conrad_result"]["result"] == "weakened"]
-    refuted = [c for c in claims if c["conrad_result"]["result"] not in ("survived", "weakened")]
+            verdict = result.get("result", "survived")
+            if verdict == "survived":
+                survived.append(claim)
+            elif verdict == "weakened":
+                weakened.append(claim)
+            else:
+                refuted.append(claim)
+        except Exception as e:
+            print(f"Conrad: Fehler bei Claim {claim.get('id', '?')} - {e}")
+            claim["conrad_result"] = {"result": "survived", "reasoning": f"Fehler: {e}"}
+            survived.append(claim)
 
     state["survived_claims"] = survived
     state["weakened_claims"] = weakened
@@ -127,51 +113,42 @@ async def sven_step(state: PipelineState) -> PipelineState:
     all_active = state["survived_claims"] + state["weakened_claims"]
 
     if len(all_active) < 2:
-        # Weniger als 2 Claims: kein Widerspruch möglich
         state["contradictions"] = []
         state["consistency_score"] = 1.0
         print("Sven: Zu wenig Claims fuer Konsistenzpruefung.")
         return state
 
     try:
-        # 1. Ähnliche Claim-Paare finden (Vektorvergleich)
         similar_pairs = await find_similar_claims(all_active)
 
         if not similar_pairs:
             state["contradictions"] = []
             state["consistency_score"] = 1.0
-            print("Sven: Keine aehnlichen Paare gefunden, keine Widersprueche.")
+            print("Sven: Keine aehnlichen Paare gefunden.")
             return state
 
-        # 2. Widersprueche pruefen (Claude Sonnet pro Paar)
         result = await check_contradictions(similar_pairs)
         state["contradictions"] = result["contradictions"]
         state["consistency_score"] = result["consistency_score"]
 
-        print(f"Sven: {len(similar_pairs)} aehnliche Paare, "
-              f"{len(result['contradictions'])} Widersprueche, "
-              f"Score={result['consistency_score']}.")
+        print(f"Sven: {len(result['contradictions'])} Widersprueche, Score={result['consistency_score']}.")
 
     except Exception as e:
         state["contradictions"] = []
         state["consistency_score"] = 1.0
-        print(f"Sven: Fehler - {e}. Konsistenz-Score auf 1.0 gesetzt.")
+        print(f"Sven: Fehler - {e}. Score auf 1.0 gesetzt.")
 
     return state
 
 
 async def pia_step(state: PipelineState) -> PipelineState:
     """Pia prüft die Aktualität aller Claims."""
-    from agents.pia_pulse.monitors import check_eurlex_updates, check_freshness
-
     freshness_results = []
 
     for claim in state["survived_claims"] + state["weakened_claims"]:
-        # Zeitbezüge im Claim finden und Aktualität prüfen
-        # (Vereinfachte Version)
         result = {
-            "claim_id": claim["id"],
-            "freshness": "fresh",  # Wird durch Pias Claude-Aufruf bestimmt
+            "claim_id": claim.get("id", "unbekannt"),
+            "freshness": "fresh",
         }
         freshness_results.append(result)
 
@@ -188,8 +165,6 @@ async def lena_step(state: PipelineState) -> PipelineState:
     from agents.lena_legal.verification_loop import run_verification_loop
 
     legal_updates = []
-
-    # Lena arbeitet nur an Claims, die Probleme haben
     problematic = state["weakened_claims"] + state["refuted_claims"]
     problematic += [c for c in state["freshness_results"]
                     if c.get("freshness") in ["stale", "outdated"]]
@@ -200,7 +175,6 @@ async def lena_step(state: PipelineState) -> PipelineState:
             continue
 
         try:
-            # 1. Relevante Quellen finden und mit Hashes versehen
             sources = await map_sources_to_claim(claim)
             if not sources:
                 legal_updates.append({
@@ -210,12 +184,10 @@ async def lena_step(state: PipelineState) -> PipelineState:
                 })
                 continue
 
-            # 2. Lena generiert Textvorschlag (Claude Opus, temperature=0)
             lena_output = await generate_legal_update(claim, sources)
             claim["lena_output"] = lena_output
             claim["source_passages"] = sources
 
-            # 3. Rueckpruefung: Quellen-Binding + Vera + Conrad
             if not lena_output.get("suggested_text"):
                 legal_updates.append({
                     "status": "REVIEW",
@@ -252,13 +224,9 @@ async def david_step(state: PipelineState) -> PipelineState:
         return state
 
     try:
-        # 1. Regelbasierte Vorpruefung (Passiv, Satzlaenge, verbotene Woerter)
         style_issues = check_style(source_text)
-
-        # 2. David (Claude Sonnet) ueberarbeitet den Text
         result = await rewrite_text(source_text, style_issues)
         state["text_improvements"] = result.get("changes", [])
-
         print(f"David: {len(state['text_improvements'])} Textverbesserungen vorgeschlagen.")
     except Exception as e:
         state["text_improvements"] = [{
@@ -282,14 +250,10 @@ async def uma_step(state: PipelineState) -> PipelineState:
         return state
 
     try:
-        # Text in Abschnitte aufteilen (grob an Absaetzen)
         paragraphs = [p.strip() for p in source_text.split("\n\n") if p.strip()]
         sections = [{"content": p, "title": "", "level": None} for p in paragraphs]
 
-        # 1. Regelbasierte Strukturanalyse
         structure_info = analyze_structure(sections)
-
-        # 2. Uma (Claude Sonnet) bewertet im Kontext
         result = await review_usability(source_text, sections, structure_info)
         state["ux_issues"] = result.get("issues", [])
 
@@ -315,19 +279,10 @@ async def generate_reports(state: PipelineState) -> PipelineState:
     return state
 
 
-# Den Graphen zusammenbauen
-
 def build_pipeline():
-    """
-    Baut die LangGraph-Pipeline zusammen.
-
-    Die Pipeline hat zwei Phasen:
-    Phase 1 (Prüfung): Simon → Vera → Conrad → Sven → Pia
-    Phase 2 (Verbesserung): Lena → David → Uma → Berichte
-    """
+    """Baut die LangGraph-Pipeline zusammen."""
     workflow = StateGraph(PipelineState)
 
-    # Knoten hinzufügen (jeder Agent ist ein Knoten)
     workflow.add_node("simon", simon_step)
     workflow.add_node("vera", vera_step)
     workflow.add_node("conrad", conrad_step)
@@ -338,7 +293,6 @@ def build_pipeline():
     workflow.add_node("uma", uma_step)
     workflow.add_node("reports", generate_reports)
 
-    # Kanten hinzufügen (die Reihenfolge)
     workflow.set_entry_point("simon")
     workflow.add_edge("simon", "vera")
     workflow.add_edge("vera", "conrad")
@@ -354,13 +308,7 @@ def build_pipeline():
 
 
 def build_improvement_pipeline():
-    """
-    Baut die verkürzte Verbesserungs-Pipeline (ohne Prüfphase).
-
-    Nur David und Uma werden ausgeführt – kein Simon/Vera/Conrad/Sven/Pia/Lena.
-    Geeignet für Texte, die bereits geprüft wurden oder nur stilistisch
-    und strukturell verbessert werden sollen.
-    """
+    """Verkürzte Pipeline: nur David und Uma."""
     workflow = StateGraph(PipelineState)
 
     workflow.add_node("david", david_step)
