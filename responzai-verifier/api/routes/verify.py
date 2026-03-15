@@ -98,7 +98,7 @@ async def verify_content(request: Request, body: VerifyRequest, _: str = Depends
     Startet einen Prueflauf fuer einen Text oder eine URL.
 
     Durchlaeuft alle 8 Agenten der Pipeline:
-    Simon -> Vera -> Conrad -> Sven -> Pia -> Lena -> David -> Uma
+    Simon -> Vera -> Conrad -> Sven -> Pia -> Lena -> Davina -> Uma
     """
     log_pipeline_start()
     try:
@@ -202,7 +202,7 @@ async def verify_mock(request: Request, body: VerifyRequest):
             "priority_actions": [
                 {"source": "Conrad (CONTRA)", "action": "claim_006 entfernen oder korrigieren: KI-Haftung ist rechtlich verankert.", "severity": "critical"},
                 {"source": "Vera (VERIFY)", "action": "Marktanteil-Angabe (80 %) auf belegbare Quelle anpassen (Eurostat: 25 %).", "severity": "major"},
-                {"source": "David (DRAFT)", "action": "Schachtelkonstruktion in Satz 3 aufloesen.", "severity": "minor"},
+                {"source": "Davina (DRAFT)", "action": "Schachtelkonstruktion in Satz 3 aufloesen.", "severity": "minor"},
             ],
         },
     }
@@ -317,7 +317,7 @@ async def verify_stream_mock(request: Request, body: VerifyRequest):
              "7 Claims geprueft", {"checked": 7}),
             ("lena", "Lena", "LEGAL", "Erstellt rechtliche Updates", 1.5,
              "2 rechtliche Updates", {"updates": 2}),
-            ("david", "David", "DRAFT", "Optimiert den Text sprachlich", 1.5,
+            ("david", "Davina", "DRAFT", "Optimiert den Text sprachlich", 1.5,
              "5 Textverbesserungen", {"improvements": 5}),
             ("uma", "Uma", "UX", "Analysiert Bedienungsfreundlichkeit", 1.5,
              "4 UX-Probleme", {"issues": 4}),

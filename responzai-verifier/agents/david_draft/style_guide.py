@@ -68,7 +68,7 @@ def check_style(text: str) -> list:
     - text: Die betroffene Textstelle
     - suggestion: Konkrete Verbesserungsempfehlung
 
-    Hinweis: Dies ist eine regelbasierte Vorprüfung. David (Claude)
+    Hinweis: Dies ist eine regelbasierte Vorprüfung. Davina (Claude)
     bewertet die gefundenen Stellen anschließend in ihrem Kontext
     und entscheidet, ob und wie sie geändert werden sollen.
     """

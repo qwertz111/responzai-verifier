@@ -42,9 +42,9 @@ async def improve_content(request: Request, body: ImproveRequest, _: str = Depen
     Verbessert einen Text sprachlich und strukturell.
 
     Durchläuft die Verbesserungsagenten:
-    David (DRAFT) → Uma (UX)
+    Davina (DRAFT) → Uma (UX)
 
-    David prüft Stil, Satzbau und Sprache nach dem responzai-Stilguide.
+    Davina prüft Stil, Satzbau und Sprache nach dem responzai-Stilguide.
     Uma analysiert Struktur und Bedienungsfreundlichkeit.
 
     Hinweis: Lena (LEGAL) ist hier nicht aktiv – für rechtliche Korrektheit
@@ -90,9 +90,9 @@ async def improve_mock(request: Request, body: ImproveRequest):
                 {"issue": "Durchschnittliche Satzlaenge: 28 Woerter (Empfehlung: max. 20).", "severity": "verbesserungswuerdig"},
             ],
             "priority_actions": [
-                {"source": "David (DRAFT)", "action": "Schachtelkonstruktionen aufloesen fuer bessere Lesbarkeit.", "severity": "major"},
+                {"source": "Davina (DRAFT)", "action": "Schachtelkonstruktionen aufloesen fuer bessere Lesbarkeit.", "severity": "major"},
                 {"source": "Uma (UX)", "action": "Einstieg fuer KMU-Zielgruppe optimieren – mit konkreter Handlungsempfehlung beginnen.", "severity": "major"},
-                {"source": "David (DRAFT)", "action": "Anglizismen durch deutsche Fachbegriffe ersetzen.", "severity": "minor"},
+                {"source": "Davina (DRAFT)", "action": "Anglizismen durch deutsche Fachbegriffe ersetzen.", "severity": "minor"},
                 {"source": "Uma (UX)", "action": "Durchschnittliche Satzlaenge auf max. 20 Woerter reduzieren.", "severity": "minor"},
             ],
         },
@@ -104,9 +104,9 @@ async def improve_mock(request: Request, body: ImproveRequest):
             "recommended_action": "kleinere Verbesserungen empfohlen",
         },
         "priority_actions": [
-            {"source": "David (DRAFT)", "action": "Schachtelkonstruktionen aufloesen fuer bessere Lesbarkeit.", "severity": "major"},
+            {"source": "Davina (DRAFT)", "action": "Schachtelkonstruktionen aufloesen fuer bessere Lesbarkeit.", "severity": "major"},
             {"source": "Uma (UX)", "action": "Einstieg fuer KMU-Zielgruppe optimieren – mit konkreter Handlungsempfehlung beginnen.", "severity": "major"},
-            {"source": "David (DRAFT)", "action": "Anglizismen durch deutsche Fachbegriffe ersetzen.", "severity": "minor"},
+            {"source": "Davina (DRAFT)", "action": "Anglizismen durch deutsche Fachbegriffe ersetzen.", "severity": "minor"},
             {"source": "Uma (UX)", "action": "Durchschnittliche Satzlaenge auf max. 20 Woerter reduzieren.", "severity": "minor"},
         ],
     }

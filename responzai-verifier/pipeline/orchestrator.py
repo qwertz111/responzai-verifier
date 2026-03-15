@@ -330,12 +330,12 @@ async def lena_step(state: PipelineState) -> PipelineState:
 
 
 async def david_step(state: PipelineState) -> PipelineState:
-    """David optimiert den Quelltext sprachlich nach responzai-Stilguide."""
+    """Davina optimiert den Quelltext sprachlich nach responzai-Stilguide."""
     from agents.david_draft.style_guide import check_style
     from agents.david_draft.rewriter import rewrite_text
 
     await _emit(state, "agent_start", {
-        "agent": "david", "name": "David", "role": "DRAFT",
+        "agent": "david", "name": "Davina", "role": "DRAFT",
         "description": "Optimiert den Text sprachlich",
     })
 
@@ -346,7 +346,7 @@ async def david_step(state: PipelineState) -> PipelineState:
             "agent": "david", "summary": "Kein Quelltext vorhanden",
             "stats": {"improvements": 0},
         })
-        print("David: Kein Quelltext vorhanden, uebersprungen.")
+        print("Davina: Kein Quelltext vorhanden, uebersprungen.")
         return state
 
     try:
@@ -368,17 +368,17 @@ async def david_step(state: PipelineState) -> PipelineState:
             "summary": f"{len(state['text_improvements'])} Textverbesserungen",
             "stats": {"improvements": len(state["text_improvements"])},
         })
-        print(f"David: {len(state['text_improvements'])} Textverbesserungen vorgeschlagen.")
+        print(f"Davina: {len(state['text_improvements'])} Textverbesserungen vorgeschlagen.")
     except Exception as e:
         state["text_improvements"] = [{
             "error": str(e),
-            "reason": "David konnte den Text nicht optimieren."
+            "reason": "Davina konnte den Text nicht optimieren."
         }]
         await _emit(state, "agent_complete", {
             "agent": "david", "summary": f"Fehler: {e}",
             "stats": {"improvements": 0},
         })
-        print(f"David: Fehler - {e}")
+        print(f"Davina: Fehler - {e}")
 
     return state
 
@@ -486,7 +486,7 @@ def build_pipeline():
 
 
 def build_improvement_pipeline():
-    """Verkürzte Pipeline: nur David und Uma."""
+    """Verkürzte Pipeline: nur Davina und Uma."""
     workflow = StateGraph(PipelineState)
 
     workflow.add_node("david", david_step)

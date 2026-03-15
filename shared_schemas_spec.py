@@ -166,7 +166,7 @@ class LenaOutput(BaseModel):
     reasoning: str
 
 
-# ─── David (DRAFT) ───────────────────────────────────
+# ─── Davina (DRAFT) ──────────────────────────────────
 
 class TextChange(BaseModel):
     current_text: str
@@ -175,7 +175,7 @@ class TextChange(BaseModel):
     category: str  # readability, nominalstil, passive, fachsprache
 
 
-class DavidOutput(BaseModel):
+class DavinaOutput(BaseModel):
     changes: List[TextChange]
     readability_score_before: int
     readability_score_after: int

@@ -7,7 +7,7 @@ from api.llm_client import call_llm
 
 
 async def rewrite_text(text: str, style_issues: list) -> dict:
-    """David überarbeitet einen Text nach den responzai-Stilregeln."""
+    """Davina überarbeitet einen Text nach den responzai-Stilregeln."""
     user_message = json.dumps({
         "text": text,
         "gefundene_stilprobleme": style_issues
@@ -20,7 +20,7 @@ async def rewrite_text(text: str, style_issues: list) -> dict:
             max_tokens=2048,
         )
     except Exception as e:
-        print(f"David: API-Fehler ({e}).")
+        print(f"Davina: API-Fehler ({e}).")
         return {"changes": [], "style_score": 0.0}
 
     raw = raw.strip()
@@ -32,7 +32,7 @@ async def rewrite_text(text: str, style_issues: list) -> dict:
     try:
         output = json.loads(repair_json(raw))
     except Exception as e:
-        print(f"David: JSON-Parsing fehlgeschlagen ({e}).")
+        print(f"Davina: JSON-Parsing fehlgeschlagen ({e}).")
         return {"changes": [], "style_score": 0.0}
 
     return output

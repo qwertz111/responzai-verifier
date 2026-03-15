@@ -1,6 +1,6 @@
 # responzai Build-Fortschritt
 
-## Aktueller Status: PHASE 6 ABGESCHLOSSEN ✅
+## Aktueller Status: PHASE 13 LAUFEND - Dashboard + Pipeline-Fixes
 
 Legende:
 - [E] = Extraktion aus Arbeitsanweisung (Read → Write, kein Modell nötig)
@@ -133,6 +133,48 @@ Legende:
 - [x] [M] SMTP-Konfiguration fuer E-Mail-Versand
 - [x] [M] Workflows in n8n importieren und testen
 
+## Phase 11: Pipeline-Integration + Bugfixes
+- [x] [S] /verify Endpoint mit LangGraph-Pipeline verbinden (verify.py Rewrite)
+- [x] [S] rag_query.py: DATABASE_URL aus Umgebung lesen (statt hardcoded localhost)
+- [x] [S] rag_query.py: Embedding als String fuer pgvector konvertieren
+- [x] [S] docker-compose.yml: ${VAR} Syntax fuer .env-Variablen
+- [x] [S] requirements.txt: Versionskonflikt langchain/voyageai loesen
+- [x] [S] verification_loop.py: KeyError 'coverage' Fix
+- [x] [S] orchestrator.py: Lena-Step ohne suggested_text absichern
+- [x] [M] Deployment + End-to-End Test auf Server (Pipeline laeuft!)
+
+## Phase 12: API Security
+- [x] [S] api/security.py: slowapi Rate Limiter (5/min per IP) + X-API-Key Auth
+- [x] [S] api/main.py: Limiter registrieren + CORS auf responzai.eu einschraenken
+- [x] [S] api/routes/verify.py: @limiter.limit + Depends(require_api_key) auf /verify + /verify/draft
+- [x] [S] requirements.txt: slowapi==0.1.9 hinzufuegen
+- [x] [M] API_KEY generieren + in .env eintragen (Server)
+- [x] [M] Deployment auf Server + End-to-End Test (401 ohne Key, Pipeline mit Key)
+- [x] [M] n8n Workflows: X-API-Key Header in /verify, /verify/draft, /verify/document hinterlegt
+- [x] [S] api/routes/upload.py: require_api_key auf /verify/document
+- [x] [S] api/routes/knowledge.py: /knowledge/ingest, /knowledge/update, /knowledge/ingest-text
+- [x] [M] n8n Workflows: Wissensbasis-Nodes auf neue Endpoints + Credential umstellen
+
+## Phase 13: Dashboard + Pipeline-Fixes (laufend)
+- [x] [S] /improve Endpoint implementiert (build_improvement_pipeline, Davina → Uma)
+- [x] [S] functions/dashboard.ts: Passwortgeschütztes Admin-Dashboard (Cloudflare Pages Function)
+- [x] [S] Dashboard: 3 Panels (Text prüfen, Verbessern, Dokument hochladen)
+- [x] [S] Dashboard: Pipeline-Visualisierung, Agent-Ergebniskarten, Score-Anzeige
+- [x] [S] Dashboard: Mock-Modus Checkbox (kein Token-Verbrauch beim Testen)
+- [x] [S] /verify/mock + /improve/mock Endpoints (realistische Fake-Daten, kein API-Key nötig)
+- [x] [S] api/main.py: generic_exception_handler (CORS-Header auch bei 500-Fehlern)
+- [x] [S] simon_scout/parser.py: try/except um json.loads (JSONDecodeError abfangen)
+- [x] [S] requirements.txt: json-repair hinzugefügt
+- [x] [S] simon/david/uma: repair_json() + max_tokens 8192 (verhindert Truncation)
+- [x] [S] simon_scout/parser.py: Automatisches Text-Chunking (60k Schwelle, 40k Chunks, 2k Overlap)
+- [x] [M] Nginx proxy_read_timeout auf 600s erhöhen (sudo auf Server)
+- [x] [S] Upload-Route: `report` → `verification_report` (Dashboard zeigt sonst leere Karten)
+- [ ] [M] Echtes PDF testen (Ende-zu-Ende mit Chunking + json-repair)
+- [ ] [M] Workflow 2 (EUR-Lex), 3 (Newsletter), 4 (CMS-Webhook) live testen
+- [x] [S] Monitoring / Alerting bei Pipeline-Fehlern
+- [x] [S] Kostenoptimierung: RAG top_k, Conrad Queries, Lena Loop, Source Mapper
+- [x] [M] Pipeline Ende-zu-Ende Test erfolgreich (KI-PASS Text, Haiku-Modus)
+
 ---
 
 Legende:
@@ -144,8 +186,6 @@ Legende:
 
 ## Statistik
 
-Gesamt: 94 Aufgaben
-- Erledigt (Phase 0-6): 73
-- Offen (Phase 7-10): 21
-- Davon automatisierbar [E/S]: 8
-- Davon manuell mit Anleitung [M]: 13
+Gesamt: 102 Aufgaben (+ Phase 13: 16 neue Aufgaben, 12 erledigt)
+- Erledigt (Phase 0-11): 102
+- Offen: 0

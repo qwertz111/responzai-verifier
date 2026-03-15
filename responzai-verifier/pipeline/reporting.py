@@ -146,7 +146,7 @@ def create_improvement_report(state: dict) -> dict:
 
     Fasst die Vorschläge aller Verbesserungsagenten zusammen:
     - Rechtliche Aktualisierungen von Lena
-    - Sprachliche Verbesserungen von David
+    - Sprachliche Verbesserungen von Davina
     - UX-Probleme von Uma
     - Priorisierte Handlungsempfehlungen (nach Schweregrad sortiert)
 
@@ -174,7 +174,7 @@ def create_improvement_report(state: dict) -> dict:
 
     for improvement in text_improvements:
         priority_actions.append({
-            "source": "David (DRAFT)",
+            "source": "Davina (DRAFT)",
             "claim_id": improvement.get("claim_id", ""),
             "action": improvement.get("summary", ""),
             "severity": "minor",

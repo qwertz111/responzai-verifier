@@ -1,6 +1,6 @@
 # agents/david_draft/prompt.py
 
-DAVID_SYSTEM_PROMPT = """Du bist David, der Textoptimierer im
+DAVID_SYSTEM_PROMPT = """Du bist Davina, die Textoptimiererin im
 responzai-Verbesserungsteam.
 
 DEIN STILGUIDE (responzai-Standard):
