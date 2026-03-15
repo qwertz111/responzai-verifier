@@ -76,6 +76,49 @@ def create_verification_report(state: dict) -> dict:
         + freshness_score * 0.1
     )
 
+    # Claim-Details aufbereiten (fuer maschinenlesbaren Bericht)
+    claims_detail = []
+    for claim in claims:
+        detail = {
+            "id": claim.get("id", ""),
+            "claim_text": claim.get("claim_text", ""),
+            "category": claim.get("category", ""),
+            "original_text": claim.get("original_text", ""),
+            "verifiability": claim.get("verifiability", ""),
+        }
+
+        # Vera-Ergebnis
+        vera = claim.get("vera_result", {})
+        detail["vera"] = {
+            "score": vera.get("score", 0.0),
+            "reasoning": vera.get("reasoning", ""),
+            "supporting_passages": vera.get("supporting_passages", []),
+            "gaps": vera.get("gaps", ""),
+        }
+
+        # Conrad-Ergebnis
+        conrad = claim.get("conrad_result")
+        if conrad:
+            detail["conrad"] = {
+                "result": conrad.get("result", ""),
+                "reasoning": conrad.get("reasoning", ""),
+                "counter_evidence": conrad.get("counter_evidence", []),
+            }
+
+        # Status bestimmen
+        if any(c.get("id") == claim.get("id") for c in refuted_claims):
+            detail["status"] = "refuted"
+        elif any(c.get("id") == claim.get("id") for c in weakened_claims):
+            detail["status"] = "weakened"
+        elif any(c.get("id") == claim.get("id") for c in survived_claims):
+            detail["status"] = "survived"
+        elif any(c.get("id") == claim.get("id") for c in verified_claims):
+            detail["status"] = "verified"
+        else:
+            detail["status"] = "unverified"
+
+        claims_detail.append(detail)
+
     return {
         "timestamp": datetime.now().isoformat(),
         "total_claims": total_claims,
@@ -93,6 +136,7 @@ def create_verification_report(state: dict) -> dict:
         },
         "claims_by_category": dict(claims_by_category),
         "overall_score": round(overall_score, 4),
+        "claims_detail": claims_detail,
     }
 
 
