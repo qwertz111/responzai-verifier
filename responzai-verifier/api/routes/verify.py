@@ -4,6 +4,7 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 
 from api.security import limiter, require_api_key
+from api.monitoring import log_pipeline_start, log_pipeline_success, log_pipeline_error
 
 router = APIRouter()
 
@@ -96,6 +97,7 @@ async def verify_content(request: Request, body: VerifyRequest, _: str = Depends
     Durchlaeuft alle 8 Agenten der Pipeline:
     Simon -> Vera -> Conrad -> Sven -> Pia -> Lena -> David -> Uma
     """
+    log_pipeline_start()
     try:
         from pipeline.orchestrator import build_pipeline
 
@@ -103,9 +105,11 @@ async def verify_content(request: Request, body: VerifyRequest, _: str = Depends
         initial_state = _build_initial_state(body.text, body.url)
         result = await pipeline.ainvoke(initial_state)
 
+        log_pipeline_success()
         return _build_response(result, body.source or body.url or "text")
 
     except Exception as e:
+        log_pipeline_error("verify", e, {"source": body.source or body.url or "text"})
         raise HTTPException(status_code=500, detail=f"Pipeline error: {str(e)}")
 
 
@@ -120,6 +124,7 @@ async def verify_draft(request: Request, body: DraftRequest, _: str = Depends(re
     - "approved_with_changes": Score >= 0.7
     - "rejected": Score < 0.7 oder kritische Fehler
     """
+    log_pipeline_start()
     try:
         from pipeline.orchestrator import build_pipeline
 
@@ -127,6 +132,7 @@ async def verify_draft(request: Request, body: DraftRequest, _: str = Depends(re
         initial_state = _build_initial_state(body.text, body.url)
         result = await pipeline.ainvoke(initial_state)
 
+        log_pipeline_success()
         response = _build_response(result, body.source or body.url or "draft")
 
         # Map verdict to n8n-compatible recommendation
@@ -141,6 +147,7 @@ async def verify_draft(request: Request, body: DraftRequest, _: str = Depends(re
         return response
 
     except Exception as e:
+        log_pipeline_error("verify/draft", e, {"source": body.source or body.url or "draft"})
         raise HTTPException(status_code=500, detail=f"Pipeline error: {str(e)}")
 
 
@@ -208,8 +215,36 @@ async def get_verify_result(task_id: str):
 
 @router.get("/health")
 async def health_check():
-    """Health-Check Endpunkt fuer Load Balancer."""
+    """Erweiterter Health-Check: API + Datenbank + Pipeline-Stats."""
+    from api.monitoring import get_stats
+
+    stats = get_stats()
+    db_ok = False
+    try:
+        from database.connection import get_pool
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            await conn.fetchval("SELECT 1")
+        db_ok = True
+    except Exception:
+        pass
+
+    status = "healthy" if db_ok else "degraded"
     return {
-        "status": "healthy",
+        "status": status,
         "version": "1.0.0",
+        "database": "connected" if db_ok else "disconnected",
+        "uptime": stats["uptime_human"],
+        "pipeline": stats["pipeline_runs"],
+    }
+
+
+@router.get("/admin/errors")
+async def get_pipeline_errors(_: str = Depends(require_api_key)):
+    """Gibt die letzten Pipeline-Fehler zurueck (API-Key geschuetzt)."""
+    from api.monitoring import get_errors, get_stats
+
+    return {
+        "stats": get_stats(),
+        "errors": get_errors(limit=20),
     }

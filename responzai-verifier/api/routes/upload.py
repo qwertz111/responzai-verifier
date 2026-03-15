@@ -5,6 +5,7 @@ from document_ingestion.router import ingest_document
 from document_ingestion.storage import save_upload
 from pipeline.orchestrator import build_pipeline
 from api.security import require_api_key
+from api.monitoring import log_pipeline_start, log_pipeline_success, log_pipeline_error
 
 router = APIRouter()
 
@@ -51,6 +52,7 @@ async def verify_document(
         raise HTTPException(status_code=415, detail=str(e))
 
     # Schritt 3: Pipeline starten
+    log_pipeline_start()
     pipeline = build_pipeline()
 
     initial_state = {
@@ -72,7 +74,12 @@ async def verify_document(
         "improvement_report": None,
     }
 
-    result = await pipeline.ainvoke(initial_state)
+    try:
+        result = await pipeline.ainvoke(initial_state)
+        log_pipeline_success()
+    except Exception as e:
+        log_pipeline_error("verify/document", e, {"filename": file.filename})
+        raise HTTPException(status_code=500, detail=f"Pipeline error: {str(e)}")
 
     return {
         "filename": file.filename,
