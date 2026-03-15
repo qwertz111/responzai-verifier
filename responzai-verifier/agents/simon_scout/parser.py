@@ -1,5 +1,6 @@
 # agents/simon_scout/parser.py
 
+import asyncio
 import anthropic
 from .prompt import SIMON_SYSTEM_PROMPT
 import json
@@ -124,10 +125,21 @@ async def extract_claims(text: str, source_url: str) -> dict:
     chunks = _split_chunks(text)
     print(f"Simon: Text zu lang ({len(text)} Zeichen), aufgeteilt in {len(chunks)} Chunks.")
 
+    # Chunks parallel verarbeiten (max 5 gleichzeitig)
+    semaphore = asyncio.Semaphore(5)
+
+    async def process_chunk(i, chunk, offset):
+        async with semaphore:
+            claims = await _extract_from_chunk(chunk, source_url, offset)
+            print(f"Simon: Chunk {i+1}/{len(chunks)} → {len(claims)} Claims.")
+            return claims
+
+    # Offsets vorab berechnen (je 50 IDs pro Chunk reservieren)
+    tasks = [process_chunk(i, chunk, i * 50) for i, chunk in enumerate(chunks)]
+    results = await asyncio.gather(*tasks)
+
     all_claims = []
-    for i, chunk in enumerate(chunks):
-        chunk_claims = await _extract_from_chunk(chunk, source_url, len(all_claims))
-        print(f"Simon: Chunk {i+1}/{len(chunks)} → {len(chunk_claims)} Claims.")
+    for chunk_claims in results:
         all_claims.extend(chunk_claims)
 
     all_claims = _deduplicate(all_claims)
