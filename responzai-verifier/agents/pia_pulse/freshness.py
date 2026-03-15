@@ -4,6 +4,7 @@ import anthropic
 import json
 from json_repair import repair_json
 from .prompt import PIA_SYSTEM_PROMPT
+from pipeline.config import LLM_MODEL
 from .monitors import check_eurlex_updates
 
 client = anthropic.AsyncAnthropic()
@@ -39,7 +40,7 @@ async def analyze_freshness(claim: dict) -> dict:
 
     # Schritt 2: An Claude schicken
     message = await client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model=LLM_MODEL,
         max_tokens=1024,
         temperature=0,
         system=PIA_SYSTEM_PROMPT,

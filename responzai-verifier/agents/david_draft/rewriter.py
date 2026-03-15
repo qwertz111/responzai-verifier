@@ -4,6 +4,7 @@ import json
 import anthropic
 from json_repair import repair_json
 from agents.david_draft.prompt import DAVID_SYSTEM_PROMPT
+from pipeline.config import LLM_MODEL
 
 client = anthropic.AsyncAnthropic()
 
@@ -33,7 +34,7 @@ async def rewrite_text(text: str, style_issues: list) -> dict:
     }, ensure_ascii=False, indent=2)
 
     response = await client.messages.create(
-        model="claude-sonnet-4-5",
+        model=LLM_MODEL,
         max_tokens=8192,
         temperature=0,
         system=DAVID_SYSTEM_PROMPT,

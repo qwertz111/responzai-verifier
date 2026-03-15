@@ -5,6 +5,7 @@ from .strategies import inverse_rag_search
 import anthropic
 import json
 from json_repair import repair_json
+from pipeline.config import LLM_MODEL
 
 client = anthropic.AsyncAnthropic()
 
@@ -32,7 +33,7 @@ async def challenge_claim(claim: dict, vera_result: dict) -> dict:
     ])
 
     message = await client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model=LLM_MODEL,
         max_tokens=2048,
         temperature=0,
         system=CONRAD_SYSTEM_PROMPT,
