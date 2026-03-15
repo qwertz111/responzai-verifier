@@ -1,6 +1,7 @@
 # agents/lena_legal/text_generator.py
 
 import json
+from json_repair import repair_json
 import anthropic
 from agents.lena_legal.prompt import LENA_SYSTEM_PROMPT
 
@@ -56,7 +57,7 @@ async def generate_legal_update(claim: dict, sources: list) -> dict:
         if raw.startswith("json"):
             raw = raw[4:]
 
-    output = json.loads(raw)
+    output = json.loads(repair_json(raw))
 
     # Source-Hashes aus der gemappten Liste eintragen
     # damit verification_loop.py sie gegen die bekannten Hashes prüfen kann
