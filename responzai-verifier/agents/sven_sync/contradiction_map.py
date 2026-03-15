@@ -5,7 +5,7 @@ import json
 from json_repair import repair_json
 from .prompt import SVEN_SYSTEM_PROMPT
 
-client = anthropic.Anthropic()
+client = anthropic.AsyncAnthropic()
 
 
 async def check_contradictions(similar_pairs: list) -> dict:
@@ -34,7 +34,7 @@ async def check_contradictions(similar_pairs: list) -> dict:
         claim_b = pair["claim_b"]
         similarity = pair["similarity"]
 
-        message = client.messages.create(
+        message = await client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=1024,
             temperature=0,

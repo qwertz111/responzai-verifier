@@ -6,7 +6,7 @@ from json_repair import repair_json
 from .prompt import PIA_SYSTEM_PROMPT
 from .monitors import check_eurlex_updates
 
-client = anthropic.Anthropic()
+client = anthropic.AsyncAnthropic()
 
 
 async def analyze_freshness(claim: dict) -> dict:
@@ -38,7 +38,7 @@ async def analyze_freshness(claim: dict) -> dict:
         updates_context = "Keine aktuellen EUR-Lex-Updates verfügbar."
 
     # Schritt 2: An Claude schicken
-    message = client.messages.create(
+    message = await client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=1024,
         temperature=0,

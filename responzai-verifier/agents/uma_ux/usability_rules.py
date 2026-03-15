@@ -5,7 +5,7 @@ import anthropic
 from json_repair import repair_json
 from agents.uma_ux.prompt import UMA_SYSTEM_PROMPT
 
-client = anthropic.Anthropic()
+client = anthropic.AsyncAnthropic()
 
 
 async def review_usability(text: str, sections: list, structure_info: dict) -> dict:
@@ -37,7 +37,7 @@ async def review_usability(text: str, sections: list, structure_info: dict) -> d
         "struktur_analyse": structure_info
     }, ensure_ascii=False, indent=2)
 
-    response = client.messages.create(
+    response = await client.messages.create(
         model="claude-sonnet-4-5",
         max_tokens=8192,
         temperature=0,

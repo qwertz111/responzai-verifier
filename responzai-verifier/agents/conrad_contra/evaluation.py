@@ -6,7 +6,7 @@ import anthropic
 import json
 from json_repair import repair_json
 
-client = anthropic.Anthropic()
+client = anthropic.AsyncAnthropic()
 
 async def challenge_claim(claim: dict, vera_result: dict) -> dict:
     """
@@ -31,7 +31,7 @@ async def challenge_claim(claim: dict, vera_result: dict) -> dict:
         for chunk in counter_evidence
     ])
 
-    message = client.messages.create(
+    message = await client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=2048,
         temperature=0,
