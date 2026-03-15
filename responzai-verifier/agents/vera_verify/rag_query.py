@@ -4,10 +4,11 @@ from database.connection import get_pool
 from processing.embedding import create_query_embedding
 
 
-async def find_relevant_chunks(claim_text: str, top_k: int = 5) -> list:
+async def find_relevant_chunks(claim_text: str, top_k: int = 3, min_similarity: float = 0.3) -> list:
     """
     Sucht die relevantesten Stellen in der Wissensbasis.
-    Nutzt den Connection Pool statt einzelner Verbindungen.
+    top_k=3 und min_similarity=0.3 filtern irrelevante Chunks.
+    Chunk-Text wird auf 500 Zeichen gekuerzt (spart Tokens).
     """
     query_embedding = create_query_embedding(claim_text)
     embedding_str = str(query_embedding)
@@ -26,10 +27,11 @@ async def find_relevant_chunks(claim_text: str, top_k: int = 5) -> list:
     return [
         {
             "chunk_id": row["id"],
-            "text": row["content"],
+            "text": row["content"][:500],
             "source": row["title"],
             "metadata": row["metadata"],
             "similarity": float(row["similarity"])
         }
         for row in rows
+        if float(row["similarity"]) >= min_similarity
     ]

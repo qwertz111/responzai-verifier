@@ -21,7 +21,7 @@ async def map_sources_to_claim(claim: dict) -> list:
     3. Ergebnis als strukturierte Liste zurückgeben.
     """
     claim_text = claim.get("claim_text", "")
-    chunks = await find_relevant_chunks(claim_text, top_k=5)
+    chunks = await find_relevant_chunks(claim_text, top_k=3)
 
     result = []
     for chunk in chunks:
