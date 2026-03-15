@@ -2,7 +2,11 @@
 
 from langgraph.graph import StateGraph, END
 from typing import TypedDict, List, Optional
+import asyncio
 import json
+
+# Max gleichzeitige Claude-API-Calls (verhindert Rate Limiting)
+MAX_CONCURRENT = 5
 
 # Der "State" ist der Zustand, der durch die Pipeline fließt.
 # Jeder Agent liest daraus und schreibt hinein.
@@ -66,20 +70,21 @@ async def simon_step(state: PipelineState) -> PipelineState:
 
 
 async def vera_step(state: PipelineState) -> PipelineState:
-    """Vera prüft jeden Claim gegen die Wissensbasis."""
+    """Vera prüft jeden Claim gegen die Wissensbasis (parallel)."""
     from agents.vera_verify.scoring import verify_claim
 
-    verified = []
-    unverified = []
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT)
 
-    for claim in state["claims"]:
-        result = await verify_claim(claim)
-        claim["vera_result"] = result
+    async def process(claim):
+        async with semaphore:
+            result = await verify_claim(claim)
+            claim["vera_result"] = result
+            return claim
 
-        if result["score"] >= 0.8:
-            verified.append(claim)
-        else:
-            unverified.append(claim)
+    claims = await asyncio.gather(*[process(c) for c in state["claims"]])
+
+    verified = [c for c in claims if c["vera_result"]["score"] >= 0.8]
+    unverified = [c for c in claims if c["vera_result"]["score"] < 0.8]
 
     state["verified_claims"] = verified
     state["unverified_claims"] = unverified
@@ -89,23 +94,22 @@ async def vera_step(state: PipelineState) -> PipelineState:
 
 
 async def conrad_step(state: PipelineState) -> PipelineState:
-    """Conrad versucht, die verifizierten Claims zu widerlegen."""
+    """Conrad versucht, die verifizierten Claims zu widerlegen (parallel)."""
     from agents.conrad_contra.evaluation import challenge_claim
 
-    survived = []
-    weakened = []
-    refuted = []
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT)
 
-    for claim in state["verified_claims"]:
-        result = await challenge_claim(claim, claim["vera_result"])
-        claim["conrad_result"] = result
+    async def process(claim):
+        async with semaphore:
+            result = await challenge_claim(claim, claim["vera_result"])
+            claim["conrad_result"] = result
+            return claim
 
-        if result["result"] == "survived":
-            survived.append(claim)
-        elif result["result"] == "weakened":
-            weakened.append(claim)
-        else:
-            refuted.append(claim)
+    claims = await asyncio.gather(*[process(c) for c in state["verified_claims"]])
+
+    survived = [c for c in claims if c["conrad_result"]["result"] == "survived"]
+    weakened = [c for c in claims if c["conrad_result"]["result"] == "weakened"]
+    refuted = [c for c in claims if c["conrad_result"]["result"] not in ("survived", "weakened")]
 
     state["survived_claims"] = survived
     state["weakened_claims"] = weakened
