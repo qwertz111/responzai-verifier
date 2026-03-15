@@ -1,7 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, model_validator
 from typing import Optional, Dict, Any
 from datetime import datetime
+import asyncio
+import json
 
 from api.security import limiter, require_api_key
 from api.monitoring import log_pipeline_start, log_pipeline_success, log_pipeline_error
@@ -248,3 +251,132 @@ async def get_pipeline_errors(_: str = Depends(require_api_key)):
         "stats": get_stats(),
         "errors": get_errors(limit=20),
     }
+
+
+@router.post("/verify/stream")
+@limiter.limit("5/minute")
+async def verify_stream(request: Request, body: VerifyRequest, _: str = Depends(require_api_key)):
+    """SSE-Streaming endpoint. Sendet Echtzeit-Events waehrend der Pipeline laeuft."""
+    from pipeline.orchestrator import build_pipeline
+    from pipeline.events import PipelineEventBus
+
+    bus = PipelineEventBus()
+    initial_state = _build_initial_state(body.text, body.url)
+    initial_state["_event_bus"] = bus
+
+    async def run_pipeline():
+        try:
+            log_pipeline_start()
+            await bus.emit("pipeline_start", {
+                "agents": ["simon", "vera", "conrad", "sven", "pia", "lena", "david", "uma"],
+                "total_agents": 8,
+            })
+            pipeline = build_pipeline()
+            result = await pipeline.ainvoke(initial_state)
+            log_pipeline_success()
+
+            response_data = _build_response(result, body.source or body.url or "text")
+            await bus.emit("pipeline_complete", {"result": response_data})
+        except Exception as e:
+            log_pipeline_error("verify/stream", e, {})
+            await bus.emit("error", {"message": str(e)})
+        finally:
+            await bus.finish()
+
+    asyncio.ensure_future(run_pipeline())
+
+    return StreamingResponse(
+        bus.stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.post("/verify/stream/mock")
+async def verify_stream_mock(request: Request, body: VerifyRequest):
+    """Mock SSE-Stream fuer Dashboard-Entwicklung ohne API-Kosten."""
+    from pipeline.events import PipelineEventBus
+
+    bus = PipelineEventBus()
+
+    async def mock_pipeline():
+        agents = [
+            ("simon", "Simon", "SCOUT", "Extrahiert pruefbare Behauptungen", 1.0,
+             "12 Claims gefunden", {"claims": 12}),
+            ("vera", "Vera", "VERIFY", "Prueft 12 Claims gegen die Wissensbasis", 2.0,
+             "8 verifiziert, 4 unsicher", {"verified": 8, "unverified": 4}),
+            ("conrad", "Conrad", "CONTRA", "Prueft 8 verifizierte Claims adversarial", 1.5,
+             "6 ueberlebt, 1 geschwaecht, 1 widerlegt", {"survived": 6, "weakened": 1, "refuted": 1}),
+            ("sven", "Sven", "SYNC", "Prueft 7 Claims auf Widersprueche", 1.0,
+             "Keine Widersprueche gefunden", {"contradictions": 0, "consistency_score": 1.0}),
+            ("pia", "Pia", "PULSE", "Prueft 7 Claims auf Aktualitaet", 0.5,
+             "7 Claims geprueft", {"checked": 7}),
+            ("lena", "Lena", "LEGAL", "Erstellt rechtliche Updates", 1.5,
+             "2 rechtliche Updates", {"updates": 2}),
+            ("david", "David", "DRAFT", "Optimiert den Text sprachlich", 1.5,
+             "5 Textverbesserungen", {"improvements": 5}),
+            ("uma", "Uma", "UX", "Analysiert Bedienungsfreundlichkeit", 1.5,
+             "4 UX-Probleme", {"issues": 4}),
+        ]
+
+        await bus.emit("pipeline_start", {
+            "agents": [a[0] for a in agents],
+            "total_agents": len(agents),
+        })
+
+        for agent_id, name, role, desc, duration, summary, stats in agents:
+            await bus.emit("agent_start", {
+                "agent": agent_id, "name": name, "role": role, "description": desc,
+            })
+            # Simulate progress steps
+            steps = 3
+            for step in range(1, steps + 1):
+                await asyncio.sleep(duration / steps)
+                await bus.emit("agent_progress", {
+                    "agent": agent_id,
+                    "message": f"Schritt {step}/{steps}...",
+                    "progress": step / steps,
+                })
+            await bus.emit("agent_complete", {
+                "agent": agent_id, "summary": summary, "stats": stats,
+            })
+
+        # Send mock final result
+        mock_result = {
+            "status": "completed", "source": body.source or "mock",
+            "total_claims": 12, "verified_claims": 8, "issues_found": 2,
+            "score": 0.82, "verdict": "partially_verified",
+            "verification_report": {
+                "overall_score": 0.82, "total_claims": 12,
+                "verified_count": 8, "unverified_count": 4,
+                "survived_count": 6, "weakened_count": 1, "refuted_count": 1,
+                "consistency_score": 1.0,
+                "freshness_summary": {"fresh": 7, "stale": 0, "outdated": 0, "expiring": 0},
+                "claims_by_category": {"LEGAL_CLAIM": 7, "PRODUCT_CLAIM": 3, "MARKET_CLAIM": 2},
+                "claims_detail": [],
+            },
+            "improvement_report": {
+                "legal_updates": [], "text_improvements": [],
+                "ux_issues": [], "priority_actions": [],
+                "summary": {"total_legal_updates": 0, "total_text_improvements": 5,
+                            "total_ux_issues": 4, "total_actions": 9},
+            },
+        }
+        await bus.emit("pipeline_complete", {"result": mock_result})
+        await bus.finish()
+
+    asyncio.ensure_future(mock_pipeline())
+
+    return StreamingResponse(
+        bus.stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
