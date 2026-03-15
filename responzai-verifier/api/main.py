@@ -59,8 +59,3 @@ app.include_router(upload_router)
 app.include_router(improve_router)
 app.include_router(reports_router)
 app.include_router(knowledge_router)
-
-
-@app.get("/health")
-async def health_check():
-    return {"status": "ok"}
