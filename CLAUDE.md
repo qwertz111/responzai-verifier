@@ -3,7 +3,11 @@
 ## Projekt-Überblick (Kurzfassung)
 
 8 KI-Agenten prüfen und verbessern Texte zu EU AI Act, KI-Governance, KI-Kompetenz.
-3 Repos: `responzai-verifier` (Agenten + API), `responzai-knowledge` (Wissensbasis), `responzai-web` (Website).
+3 Repos:
+- `responzai-verifier` (Agenten + API, Backend auf Hetzner VPS)
+- `responzai-knowledge` (Wissensbasis, Embeddings, Seed-Daten)
+- `responzai-website` (BESTEHENDES Repo, responzai.eu, gehostet bei Cloudflare, enthält auch Verify-Interface)
+NICHT verwechseln: `responzai-web` existiert als leeres Repo, wird NICHT verwendet.
 Stack: Python/FastAPI, LangGraph, PostgreSQL + pgvector, Claude API, Voyage-3, Docker, n8n.
 
 ### Agenten
@@ -16,13 +20,13 @@ Stack: Python/FastAPI, LangGraph, PostgreSQL + pgvector, Claude API, Voyage-3, D
 | Sven | SYNC | Konsistenzprüfung über alle Kanäle |
 | Pia | PULSE | Aktualitätsprüfung (EUR-Lex, RSS) |
 | Lena | LEGAL | Rechtliche Textaktualisierung (Anti-Halluzination!) |
-| David | DRAFT | Sprachliche Optimierung (Stilguide) |
+| Davina | DRAFT | Sprachliche Optimierung (Stilguide) |
 | Uma | UX | Bedienungsfreundlichkeit |
 
 ### Pipeline
 
 ```
-Eingabe (URL / Text / Datei-Upload) → Simon → Vera → Conrad → Sven → Pia → Lena → David → Uma → Bericht
+Eingabe (URL / Text / Datei-Upload) → Simon → Vera → Conrad → Sven → Pia → Lena → Davina → Uma → Bericht
 ```
 
 ### Schwellenwerte

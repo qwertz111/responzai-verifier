@@ -112,7 +112,7 @@ Uebertriebene Produktversprechen koennen als irrefuehrende Werbung gewertet werd
 
 4. **Lena (LEGAL)** schlaegt eine rechtssichere Alternative vor, z.B.: "Unser KI-Tool unterstuetzt Sie bei der Umsetzung der DSGVO-Anforderungen."
 
-5. **David (DRAFT)** optimiert die Formulierung sprachlich, so dass sie ueberzeugend bleibt, ohne rechtlich angreifbar zu sein.
+5. **Davina (DRAFT)** optimiert die Formulierung sprachlich, so dass sie ueberzeugend bleibt, ohne rechtlich angreifbar zu sein.
 
 ### Fazit fuer den Nutzer
 
@@ -195,7 +195,7 @@ Sprachlich einwandfreie, aber inhaltlich falsche Aussagen sind besonders gefaehr
 
 3. **Conrad (CONTRA)** findet sofort Gegenbeispiele: KI-Systeme mit minimalem Risiko (z.B. Spam-Filter) benoetigen keine Zertifizierung. Ergebnis: "refuted".
 
-4. **David (DRAFT)** schlaegt eine korrigierte, sprachlich optimierte Formulierung vor: "Hochrisiko-KI-Systeme muessen laut EU AI Act eine Konformitaetsbewertung durchlaufen, bevor sie in der EU eingesetzt werden duerfen."
+4. **Davina (DRAFT)** schlaegt eine korrigierte, sprachlich optimierte Formulierung vor: "Hochrisiko-KI-Systeme muessen laut EU AI Act eine Konformitaetsbewertung durchlaufen, bevor sie in der EU eingesetzt werden duerfen."
 
 ### Fazit fuer den Nutzer
 
@@ -262,7 +262,7 @@ Einmal veroeffentlichte Fehler verbreiten sich schnell (E-Mail-Newsletter koenne
    - Sven gleicht mit bestehenden Veroeffentlichungen ab (keine Widersprueche)
    - Pia prueft Aktualitaet aller Rechtsverweise
    - Lena korrigiert rechtliche Ungenauigkeiten
-   - David optimiert die Sprache
+   - Davina optimiert die Sprache
    - Uma prueft Lesbarkeit und Struktur
 
 ### Fazit fuer den Nutzer

@@ -53,7 +53,7 @@ def test_pipeline_state_has_all_fields():
         "freshness_results",
         # Lena
         "legal_updates",
-        # David
+        # Davina
         "text_improvements",
         # Uma
         "ux_issues",

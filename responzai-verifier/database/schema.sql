@@ -48,7 +48,7 @@ CREATE TABLE claims (
 
     -- Verbesserungsvorschläge
     legal_suggestion TEXT,                 -- Lenas Vorschlag
-    draft_suggestion TEXT,                 -- Davids Vorschlag
+    draft_suggestion TEXT,                 -- Davinas Vorschlag
     ux_suggestion TEXT,                    -- Umas Vorschlag
 
     action_required BOOLEAN DEFAULT FALSE,
