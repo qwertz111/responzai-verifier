@@ -171,6 +171,12 @@ Legende:
 - [x] [S] Upload-Route: `report` → `verification_report` (Dashboard zeigt sonst leere Karten)
 - [ ] [M] Echtes PDF testen (Ende-zu-Ende mit Chunking + json-repair)
 - [ ] [M] Workflow 2 (EUR-Lex), 3 (Newsletter), 4 (CMS-Webhook) live testen
+
+## Phase 14: Pia EUR-Lex-Anbindung
+- [ ] [S] n8n Workflow 2 live testen: EUR-Lex-Abfrage auf neue/geänderte EU-Verordnungen
+- [ ] [S] Pia-Prompt erweitern: Referenzdaten aus EUR-Lex-Workflow auswerten
+- [ ] [M] Automatischen Zeitplan einrichten (z.B. wöchentlich EUR-Lex prüfen)
+- [ ] [M] Benachrichtigung bei Änderungen (n8n → E-Mail oder Dashboard-Alert)
 - [x] [S] Monitoring / Alerting bei Pipeline-Fehlern
 - [x] [S] Kostenoptimierung: RAG top_k, Conrad Queries, Lena Loop, Source Mapper
 - [x] [M] Pipeline Ende-zu-Ende Test erfolgreich (KI-PASS Text, Haiku-Modus)
