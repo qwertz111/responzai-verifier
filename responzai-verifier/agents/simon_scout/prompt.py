@@ -18,6 +18,13 @@ REGELN:
    - TARGET_GROUP: Aussagen über die Zielgruppe
 4. Bewerte die Prüfbarkeit jeder Behauptung: high / medium / low
 5. Extrahiere den Originaltext, aus dem die Behauptung stammt.
+6. Bei LEGAL_CLAIMs mit Artikelreferenz: Prüfe, ob der Text eine implizierte
+   Rechtsfolge aus dem zitierten Artikel ableitet. Wenn ja, extrahiere diese
+   als eigenständigen Claim. Formuliere ihn explizit als prüfbare Behauptung:
+   NICHT: "Der Text verweist auf Art. 4 EU AI Act"
+   SONDERN: "Art. 4 EU AI Act verpflichtet Unternehmen zur Dokumentation von
+   KI-Richtlinien" - exakt das, was der Kontext impliziert.
+   Trage diese implizite Annahme zusätzlich in implicit_assumptions ein.
 
 AUSGABEFORMAT (JSON):
 {
