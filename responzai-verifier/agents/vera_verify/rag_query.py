@@ -4,7 +4,7 @@ from database.connection import get_pool
 from processing.embedding import create_query_embedding
 
 
-async def find_relevant_chunks(claim_text: str, top_k: int = 8, min_similarity: float = 0.15) -> list:
+async def find_relevant_chunks(claim_text: str, top_k: int = 15, min_similarity: float = 0.15) -> list:
     """
     Sucht die relevantesten Stellen in der Wissensbasis.
     top_k=8 holt genuegend Kandidaten, min_similarity=0.15 laesst auch
