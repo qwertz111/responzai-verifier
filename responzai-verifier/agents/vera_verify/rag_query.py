@@ -30,7 +30,17 @@ async def find_relevant_chunks(claim_text: str, top_k: int = 8, min_similarity: 
         sim = float(row["similarity"])
         if sim < min_similarity:
             continue
-        meta = row["metadata"] if isinstance(row["metadata"], dict) else {}
+        raw_meta = row["metadata"]
+        if isinstance(raw_meta, dict):
+            meta = raw_meta
+        elif isinstance(raw_meta, str):
+            import json
+            try:
+                meta = json.loads(raw_meta)
+            except (json.JSONDecodeError, TypeError):
+                meta = {}
+        else:
+            meta = {}
         # Quellenangabe mit Artikelreferenz anreichern
         source_label = row["title"]
         if meta.get("article"):
