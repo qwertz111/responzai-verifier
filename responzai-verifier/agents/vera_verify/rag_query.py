@@ -25,14 +25,23 @@ async def find_relevant_chunks(claim_text: str, top_k: int = 8, min_similarity: 
             LIMIT $2
         """, embedding_str, top_k)
 
-    return [
-        {
+    results = []
+    for row in rows:
+        sim = float(row["similarity"])
+        if sim < min_similarity:
+            continue
+        meta = row["metadata"] if isinstance(row["metadata"], dict) else {}
+        # Quellenangabe mit Artikelreferenz anreichern
+        source_label = row["title"]
+        if meta.get("article"):
+            source_label = f"{row['title']}, {meta['article']}"
+            if meta.get("article_title"):
+                source_label += f" ({meta['article_title']})"
+        results.append({
             "chunk_id": row["id"],
             "text": row["content"][:800],
-            "source": row["title"],
-            "metadata": row["metadata"],
-            "similarity": float(row["similarity"])
-        }
-        for row in rows
-        if float(row["similarity"]) >= min_similarity
-    ]
+            "source": source_label,
+            "metadata": meta,
+            "similarity": sim,
+        })
+    return results

@@ -183,7 +183,16 @@ async def seed_database(text: str, source_title: str = "EU AI Act",
 
         for i in range(0, len(chunks), batch_size):
             batch = chunks[i:i + batch_size]
-            texts = [c["content"] for c in batch]
+            # Artikelprafix zum Embedding-Text hinzufuegen fuer besseres Retrieval
+            texts = []
+            for c in batch:
+                prefix_parts = []
+                if c["metadata"].get("article"):
+                    prefix_parts.append(c["metadata"]["article"])
+                if c["metadata"].get("article_title"):
+                    prefix_parts.append(c["metadata"]["article_title"])
+                prefix = " - ".join(prefix_parts)
+                texts.append(f"{prefix}\n{c['content']}" if prefix else c["content"])
 
             print(f"  Batch {i // batch_size + 1}/{(len(chunks) - 1) // batch_size + 1}: "
                   f"Embeddings fuer {len(texts)} Chunks...")
