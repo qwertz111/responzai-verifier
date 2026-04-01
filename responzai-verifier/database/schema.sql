@@ -27,7 +27,7 @@ CREATE TABLE chunks (
 
 -- Index für schnelle Ähnlichkeitssuche
 CREATE INDEX ON chunks USING ivfflat (embedding vector_cosine_ops)
-    WITH (lists = 100);
+    WITH (lists = 10);
 
 -- Tabelle 3: Claims
 -- Speichert die extrahierten Behauptungen
