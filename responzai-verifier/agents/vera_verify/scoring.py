@@ -13,9 +13,12 @@ async def verify_claim(claim: dict) -> dict:
     """
     relevant_chunks = await find_relevant_chunks(claim["claim_text"])
 
+    # Top 5 fuer den LLM-Kontext (spart Tokens, behaelt Relevanz)
+    top_chunks = relevant_chunks[:5]
+
     context = "\n\n".join([
         f"[Quelle: {chunk['source']}]\n{chunk['text']}"
-        for chunk in relevant_chunks
+        for chunk in top_chunks
     ])
 
     user_message = f"""BEHAUPTUNG:
